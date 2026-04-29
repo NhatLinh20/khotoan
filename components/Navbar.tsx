@@ -2,22 +2,25 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Menu, X, LogOut, User as UserIcon, BookOpen, GraduationCap, Home } from 'lucide-react'
+import { Menu, X, LogOut, User as UserIcon, BookOpen, GraduationCap, Home, Settings } from 'lucide-react'
 import { logout } from '@/app/actions/auth'
 
 interface NavbarProps {
-  user: any // Adjust type as needed
+  user: any
+  profile?: any
 }
 
-export default function Navbar({ user }: NavbarProps) {
+export default function Navbar({ user, profile }: NavbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen)
+  const isTeacher = profile?.role === 'teacher'
 
   const navLinks = [
     { href: '/', label: 'Trang chủ', icon: <Home size={18} /> },
     { href: '/courses', label: 'Khóa học', icon: <BookOpen size={18} /> },
     { href: '/practice', label: 'Luyện thi', icon: <GraduationCap size={18} /> },
+    ...(isTeacher ? [{ href: '/teacher', label: 'Quản lý', icon: <Settings size={18} /> }] : []),
   ]
 
   return (

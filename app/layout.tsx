@@ -20,10 +20,20 @@ export default async function RootLayout({
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
+  let profile = null;
+  if (user) {
+    const { data } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+    profile = data;
+  }
+
   return (
     <html lang="en" className={inter.className}>
       <body className="antialiased">
-        <Navbar user={user} />
+        <Navbar user={user} profile={profile} />
         <main className="min-h-screen pt-20">
           {children}
         </main>
