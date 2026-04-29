@@ -72,8 +72,8 @@ export default async function EditQuestionPage({
           </code>
         </h1>
         <p className="text-gray-500 mt-2 font-medium">
-          Lớp: {({ '0': '10', '1': '11', '2': '12' })[q.grade_code ?? ''] ?? '?'} · 
-          Môn: {({ D: 'Đại số', H: 'Hình học', C: 'Chuyên đề' })[q.subject_type ?? ''] ?? '?'}
+          Lớp: {({'0': '10', '1': '11', '2': '12'} as Record<string,string>)[q.grade_code ?? ''] ?? '?'} · 
+          Môn: {({D: 'Đại số', H: 'Hình học', C: 'Chuyên đề'} as Record<string,string>)[q.subject_type ?? ''] ?? '?'}
         </p>
       </div>
 

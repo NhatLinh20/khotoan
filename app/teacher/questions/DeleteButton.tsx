@@ -20,10 +20,10 @@ export default function DeleteQuestionButton({ id }: { id: string }) {
       type="button"
       onClick={handleDelete}
       disabled={isPending}
-      className="p-2 rounded-xl bg-red-50 dark:bg-red-900/20 text-red-500 hover:bg-red-100 disabled:opacity-50 transition-colors"
+      className="p-1.5 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-500 hover:bg-red-100 disabled:opacity-50 transition-colors"
       title="Xoá"
     >
-      {isPending ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+      {isPending ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
     </button>
   )
 }

@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Eye, Save, Loader2, Hash } from 'lucide-react'
+import { Eye, Save, Loader2, Hash, BookOpen, CheckCircle } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { saveQuestion, updateQuestion } from '@/app/actions/questions'
+import { getChapters, getLessons, getForms } from '@/lib/math-taxonomy'
 
 const LatexPreview = dynamic(() => import('@/components/LatexPreview'), { ssr: false })
 
@@ -26,10 +27,10 @@ const DIFFICULTY_OPTIONS = [
   { value: 'C', label: 'C — Vận dụng cao' },
 ]
 const TYPE_OPTIONS = [
-  { value: 'mc', label: 'Trắc nghiệm 4 đáp án (MC)' },
+  { value: 'mc', label: 'Trắc nghiệm (MC)' },
   { value: 'tf', label: 'Đúng / Sai (TF)' },
-  { value: 'short', label: 'Trả lời ngắn (Số)' },
-  { value: 'essay', label: 'Tự luận (Essay)' },
+  { value: 'short', label: 'Trả lời ngắn' },
+  { value: 'essay', label: 'Tự luận' },
 ]
 
 // ─── Types ──────────────────────────────────────────────────────────
@@ -60,15 +61,17 @@ interface QuestionFormProps {
   }
 }
 
-// ─── Shared input style ──────────────────────────────────────────────
-const inputCls =
-  'w-full px-4 py-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all'
-const labelCls = 'block text-xs font-black text-gray-500 uppercase tracking-widest mb-2'
+// ─── Shared styles ───────────────────────────────────────────────────
+const inputCls = 'w-full px-3 py-2.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all'
+const labelCls = 'block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5'
 
-function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
+function SectionCard({ title, icon, children }: { title: string; icon?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-100 dark:border-slate-800 p-8 flex flex-col gap-6">
-      <h2 className="text-base font-black text-gray-900 dark:text-white">{title}</h2>
+    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-6 flex flex-col gap-5">
+      <div className="flex items-center gap-2">
+        {icon && <span className="text-primary">{icon}</span>}
+        <h2 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wide">{title}</h2>
+      </div>
       {children}
     </div>
   )
@@ -81,35 +84,63 @@ export default function QuestionForm({ mode, initialData }: QuestionFormProps) {
   const [error, setError] = useState<string | null>(null)
   const [showPreview, setShowPreview] = useState(false)
 
-  // Code params
+  // ── ID params ──
   const [gradeCode, setGradeCode] = useState(initialData?.grade_code ?? '0')
   const [subjectType, setSubjectType] = useState(initialData?.subject_type ?? 'D')
-  const [chapter, setChapter] = useState(String(initialData?.chapter ?? 1))
+  const [chapter, setChapter] = useState(initialData?.chapter ?? 1)
   const [difficultyCode, setDifficultyCode] = useState(initialData?.difficulty ?? 'N')
-  const [lesson, setLesson] = useState(String(initialData?.lesson ?? 1))
-  const [form, setForm] = useState(String(initialData?.form ?? 1))
+  const [lesson, setLesson] = useState(initialData?.lesson ?? 1)
+  const [form, setForm] = useState(initialData?.form ?? 1)
 
-  // Content
+  // ── Derived taxonomy lists ──
+  const chapters = getChapters(gradeCode, subjectType)
+  const lessons = getLessons(gradeCode, subjectType, chapter)
+  const forms = getForms(gradeCode, subjectType, chapter, lesson)
+
+  // Reset cascades when parent changes
+  useEffect(() => {
+    const chs = getChapters(gradeCode, subjectType)
+    if (!chs.find((c) => c.value === chapter)) {
+      const first = chs[0]?.value ?? 1
+      setChapter(first)
+    }
+  }, [gradeCode, subjectType])
+
+  useEffect(() => {
+    const lss = getLessons(gradeCode, subjectType, chapter)
+    if (!lss.find((l) => l.value === lesson)) {
+      setLesson(lss[0]?.value ?? 1)
+    }
+  }, [gradeCode, subjectType, chapter])
+
+  useEffect(() => {
+    const fms = getForms(gradeCode, subjectType, chapter, lesson)
+    if (!fms.find((f) => f.value === form)) {
+      setForm(fms[0]?.value ?? 1)
+    }
+  }, [gradeCode, subjectType, chapter, lesson])
+
+  // ── Content ──
   const [qType, setQType] = useState(initialData?.type ?? 'mc')
   const [content, setContent] = useState(initialData?.content ?? '')
   const [imageUrl, setImageUrl] = useState(initialData?.image_url ?? '')
 
-  // MC
+  // ── MC ──
   const [optA, setOptA] = useState(initialData?.option_a ?? '')
   const [optB, setOptB] = useState(initialData?.option_b ?? '')
   const [optC, setOptC] = useState(initialData?.option_c ?? '')
   const [optD, setOptD] = useState(initialData?.option_d ?? '')
   const [correctAnswer, setCorrectAnswer] = useState(initialData?.correct_answer ?? 'A')
 
-  // TF
+  // ── TF ──
   const [tfItems, setTfItems] = useState<Record<'a' | 'b' | 'c' | 'd', TfState>>({
     a: { content: initialData?.tf_items?.find((i) => i.label === 'a')?.content ?? '', is_correct: initialData?.tf_items?.find((i) => i.label === 'a')?.is_correct ?? false },
-    b: { content: initialData?.tf_items?.find((i) => i.label === 'b')?.content ?? '', is_correct: false },
-    c: { content: initialData?.tf_items?.find((i) => i.label === 'c')?.content ?? '', is_correct: false },
-    d: { content: initialData?.tf_items?.find((i) => i.label === 'd')?.content ?? '', is_correct: false },
+    b: { content: initialData?.tf_items?.find((i) => i.label === 'b')?.content ?? '', is_correct: initialData?.tf_items?.find((i) => i.label === 'b')?.is_correct ?? false },
+    c: { content: initialData?.tf_items?.find((i) => i.label === 'c')?.content ?? '', is_correct: initialData?.tf_items?.find((i) => i.label === 'c')?.is_correct ?? false },
+    d: { content: initialData?.tf_items?.find((i) => i.label === 'd')?.content ?? '', is_correct: initialData?.tf_items?.find((i) => i.label === 'd')?.is_correct ?? false },
   })
 
-  // Short / Essay
+  // ── Short / Essay ──
   const [correctNumber, setCorrectNumber] = useState(String(initialData?.correct_number ?? ''))
   const [solutionGuide, setSolutionGuide] = useState(initialData?.solution_guide ?? '')
   const [maxScore, setMaxScore] = useState(String(initialData?.max_score ?? ''))
@@ -122,107 +153,118 @@ export default function QuestionForm({ mode, initialData }: QuestionFormProps) {
     setLoading(true)
     setError(null)
     const fd = new FormData(e.currentTarget)
-
     const result = mode === 'new'
       ? await saveQuestion(fd)
       : await updateQuestion(initialData!.id, fd)
-
     if (result?.error) {
       setError(result.error)
       setLoading(false)
     }
-    // On success, server action redirects
   }, [mode, initialData])
 
+  // ── Chapter label for breadcrumb ──
+  const chapterLabel = chapters.find((c) => c.value === chapter)?.label ?? ''
+  const lessonLabel = lessons.find((l) => l.value === lesson)?.label ?? ''
+
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-6 max-w-4xl">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5 max-w-4xl">
       {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-5 py-4 rounded-2xl text-sm font-bold">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-5 py-4 rounded-xl text-sm font-bold">
           ⚠ {error}
         </div>
       )}
 
-      {/* ── Section 1: Mã ID ── */}
-      <SectionCard title="① Mã câu hỏi (tự động sinh)">
-        {/* Preview code */}
-        <div className="flex items-center gap-3 bg-primary/5 border border-primary/20 rounded-2xl px-5 py-4">
-          <Hash size={20} className="text-primary shrink-0" />
-          <div>
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Mã câu hỏi</p>
-            <p className="text-2xl font-black text-primary tracking-widest">{questionCode}</p>
-            <p className="text-[10px] text-gray-400 mt-0.5">
-              [{gradeCode}=Lớp] [{subjectType}=Môn] [{chapter}=Chương] [{difficultyCode}=Mức] [{lesson}=Bài] - [{form}=Dạng]
-            </p>
+      {/* ── SECTION 1: MÃ ID ── */}
+      <SectionCard title="Mã câu hỏi" icon={<Hash size={16} />}>
+
+        {/* Live ID Badge */}
+        <div className="flex items-center gap-3 bg-primary/5 border border-primary/20 rounded-xl px-4 py-3">
+          <div className="flex-1">
+            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Mã tự động sinh</p>
+            <p className="text-xl font-black text-primary tracking-widest font-mono">{questionCode}</p>
+          </div>
+          <div className="text-right text-[10px] text-gray-400 leading-relaxed max-w-[55%] hidden sm:block">
+            <p className="font-bold text-gray-500 truncate">{chapterLabel}</p>
+            <p className="truncate">{lessonLabel}</p>
           </div>
         </div>
 
         <input type="hidden" name="question_code" value={questionCode} />
         <input type="hidden" name="grade_code" value={gradeCode} />
         <input type="hidden" name="subject_type" value={subjectType} />
+        <input type="hidden" name="chapter" value={chapter} />
         <input type="hidden" name="difficulty" value={difficultyCode} />
+        <input type="hidden" name="lesson" value={lesson} />
+        <input type="hidden" name="form" value={form} />
 
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        {/* Row 1: Grade + Subject + Difficulty + Type */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div>
-            <label className={labelCls}>1 — Lớp</label>
+            <label className={labelCls}>① Lớp</label>
             <select value={gradeCode} onChange={(e) => setGradeCode(e.target.value)} className={inputCls}>
               {GRADE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </div>
           <div>
-            <label className={labelCls}>2 — Môn</label>
+            <label className={labelCls}>② Môn học</label>
             <select value={subjectType} onChange={(e) => setSubjectType(e.target.value)} className={inputCls}>
               {SUBJECT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </div>
           <div>
-            <label className={labelCls}>3 — Chương</label>
-            <input
-              name="chapter"
-              type="number" min={1} max={9}
-              value={chapter}
-              onChange={(e) => setChapter(e.target.value)}
-              className={inputCls}
-            />
-          </div>
-          <div>
-            <label className={labelCls}>4 — Mức độ</label>
+            <label className={labelCls}>④ Mức độ</label>
             <select value={difficultyCode} onChange={(e) => setDifficultyCode(e.target.value)} className={inputCls}>
               {DIFFICULTY_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </div>
           <div>
-            <label className={labelCls}>5 — Bài §</label>
-            <input
-              name="lesson"
-              type="number" min={1} max={9}
-              value={lesson}
-              onChange={(e) => setLesson(e.target.value)}
+            <label className={labelCls}>⑥ Dạng bài</label>
+            <select value={form} onChange={(e) => setForm(Number(e.target.value))} className={inputCls}>
+              {forms.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
+            </select>
+          </div>
+        </div>
+
+        {/* Row 2: Chapter + Lesson (full width, cascading dropdowns) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label className={labelCls}>③ Chương</label>
+            <select
+              value={chapter}
+              onChange={(e) => setChapter(Number(e.target.value))}
               className={inputCls}
-            />
+            >
+              {chapters.map((c) => (
+                <option key={c.value} value={c.value}>{c.label}</option>
+              ))}
+            </select>
           </div>
           <div>
-            <label className={labelCls}>6 — Dạng</label>
-            <input
-              name="form"
-              type="number" min={1} max={9}
-              value={form}
-              onChange={(e) => setForm(e.target.value)}
+            <label className={labelCls}>⑤ Bài học</label>
+            <select
+              value={lesson}
+              onChange={(e) => setLesson(Number(e.target.value))}
               className={inputCls}
-            />
+            >
+              {lessons.map((l) => (
+                <option key={l.value} value={l.value}>{l.label}</option>
+              ))}
+            </select>
           </div>
         </div>
       </SectionCard>
 
-      {/* ── Section 2: Loại câu + Nội dung ── */}
-      <SectionCard title="② Nội dung câu hỏi">
-        {/* Question type */}
+      {/* ── SECTION 2: LOẠI CÂU HỎI + NỘI DUNG ── */}
+      <SectionCard title="Nội dung câu hỏi" icon={<BookOpen size={16} />}>
+
+        {/* Question type pills */}
         <div>
           <label className={labelCls}>Loại câu hỏi</label>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {TYPE_OPTIONS.map((o) => (
               <label
                 key={o.value}
-                className={`flex items-center gap-2 px-4 py-3 rounded-2xl border cursor-pointer transition-all text-sm font-bold ${
+                className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border cursor-pointer transition-all text-xs font-bold ${
                   qType === o.value
                     ? 'border-primary bg-primary/5 text-primary'
                     : 'border-gray-200 dark:border-slate-700 text-gray-500 hover:border-primary/40'
@@ -240,16 +282,16 @@ export default function QuestionForm({ mode, initialData }: QuestionFormProps) {
           </div>
         </div>
 
-        {/* Content + preview */}
+        {/* Content */}
         <div>
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-1.5">
             <label className={labelCls}>Nội dung câu hỏi</label>
             <button
               type="button"
               onClick={() => setShowPreview(!showPreview)}
-              className="flex items-center gap-1.5 text-xs font-bold text-primary hover:text-primary-dark transition-colors"
+              className="flex items-center gap-1 text-[10px] font-bold text-primary hover:text-primary-dark"
             >
-              <Eye size={14} />
+              <Eye size={12} />
               {showPreview ? 'Ẩn preview' : 'Preview LaTeX'}
             </button>
           </div>
@@ -263,8 +305,8 @@ export default function QuestionForm({ mode, initialData }: QuestionFormProps) {
             className={`${inputCls} resize-y font-mono`}
           />
           {showPreview && content && (
-            <div className="mt-3 p-5 bg-gray-50 dark:bg-slate-800/50 rounded-2xl border border-gray-100 dark:border-slate-800">
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Preview</p>
+            <div className="mt-3 p-4 bg-gray-50 dark:bg-slate-800/50 rounded-xl border border-gray-100 dark:border-slate-800">
+              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">Preview</p>
               <LatexPreview content={content} />
             </div>
           )}
@@ -284,16 +326,16 @@ export default function QuestionForm({ mode, initialData }: QuestionFormProps) {
         </div>
       </SectionCard>
 
-      {/* ── Section 3: Type-specific ── */}
+      {/* ── SECTION 3: TYPE-SPECIFIC ── */}
       {qType === 'mc' && (
-        <SectionCard title="③ Đáp án trắc nghiệm">
+        <SectionCard title="Đáp án trắc nghiệm" icon={<CheckCircle size={16} />}>
           {(['a', 'b', 'c', 'd'] as const).map((opt, i) => {
             const letter = opt.toUpperCase() as 'A' | 'B' | 'C' | 'D'
             const val = [optA, optB, optC, optD][i]
             const setter = [setOptA, setOptB, setOptC, setOptD][i]
             return (
-              <div key={opt} className="flex items-start gap-3">
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-sm shrink-0 mt-0.5 ${
+              <div key={opt} className="flex items-center gap-3">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs shrink-0 ${
                   correctAnswer === letter ? 'bg-emerald-500 text-white' : 'bg-gray-100 dark:bg-slate-800 text-gray-500'
                 }`}>
                   {letter}
@@ -305,7 +347,7 @@ export default function QuestionForm({ mode, initialData }: QuestionFormProps) {
                   placeholder={`Đáp án ${letter}`}
                   className={`${inputCls} flex-1`}
                 />
-                <label className="flex items-center gap-1.5 mt-2 cursor-pointer shrink-0">
+                <label className="flex items-center gap-1 cursor-pointer shrink-0">
                   <input
                     type="radio" name="correct_answer" value={letter}
                     checked={correctAnswer === letter}
@@ -321,31 +363,28 @@ export default function QuestionForm({ mode, initialData }: QuestionFormProps) {
       )}
 
       {qType === 'tf' && (
-        <SectionCard title="③ Mệnh đề Đúng / Sai">
+        <SectionCard title="Mệnh đề Đúng / Sai" icon={<CheckCircle size={16} />}>
           {(['a', 'b', 'c', 'd'] as const).map((label) => (
-            <div key={label} className="flex items-start gap-3">
-              <div className="w-9 h-9 rounded-xl bg-gray-100 dark:bg-slate-800 flex items-center justify-center font-black text-sm text-gray-500 shrink-0 mt-0.5">
+            <div key={label} className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-slate-800 flex items-center justify-center font-black text-xs text-gray-500 shrink-0">
                 {label}
               </div>
-              <div className="flex-1">
-                <input
-                  name={`tf_content_${label}`}
-                  value={tfItems[label].content}
-                  onChange={(e) => setTfItems((prev) => ({ ...prev, [label]: { ...prev[label], content: e.target.value } }))}
-                  placeholder={`Nội dung mệnh đề ${label}`}
-                  className={inputCls}
-                />
-              </div>
-              {/* Toggle Đúng/Sai */}
+              <input
+                name={`tf_content_${label}`}
+                value={tfItems[label].content}
+                onChange={(e) => setTfItems((prev) => ({ ...prev, [label]: { ...prev[label], content: e.target.value } }))}
+                placeholder={`Nội dung mệnh đề ${label}`}
+                className={`${inputCls} flex-1`}
+              />
               <button
                 type="button"
                 onClick={() => setTfItems((prev) => ({
                   ...prev,
                   [label]: { ...prev[label], is_correct: !prev[label].is_correct },
                 }))}
-                className={`mt-1 px-4 py-2.5 rounded-2xl text-xs font-black transition-all shrink-0 border ${
+                className={`px-3 py-2 rounded-xl text-xs font-black transition-all shrink-0 border ${
                   tfItems[label].is_correct
-                    ? 'bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-500/20'
+                    ? 'bg-emerald-500 text-white border-emerald-500'
                     : 'bg-red-50 dark:bg-red-900/20 text-red-500 border-red-200 dark:border-red-800'
                 }`}
               >
@@ -358,8 +397,8 @@ export default function QuestionForm({ mode, initialData }: QuestionFormProps) {
       )}
 
       {qType === 'short' && (
-        <SectionCard title="③ Đáp số (số)">
-          <div>
+        <SectionCard title="Đáp số (số)" icon={<CheckCircle size={16} />}>
+          <div className="max-w-xs">
             <label className={labelCls}>Đáp án đúng (số)</label>
             <input
               name="correct_number"
@@ -375,7 +414,7 @@ export default function QuestionForm({ mode, initialData }: QuestionFormProps) {
       )}
 
       {qType === 'essay' && (
-        <SectionCard title="③ Hướng dẫn chấm tự luận">
+        <SectionCard title="Hướng dẫn chấm tự luận" icon={<CheckCircle size={16} />}>
           <div>
             <label className={labelCls}>Hướng dẫn giải</label>
             <textarea
@@ -403,20 +442,34 @@ export default function QuestionForm({ mode, initialData }: QuestionFormProps) {
         </SectionCard>
       )}
 
+      {/* Lời giải chung (ngoài essay) */}
+      {qType !== 'essay' && (
+        <SectionCard title="Lời giải (tuỳ chọn)" icon={<BookOpen size={16} />}>
+          <textarea
+            name="solution_guide"
+            value={solutionGuide}
+            onChange={(e) => setSolutionGuide(e.target.value)}
+            rows={4}
+            placeholder="Trình bày lời giải chi tiết... (hỗ trợ LaTeX)"
+            className={`${inputCls} resize-y`}
+          />
+        </SectionCard>
+      )}
+
       {/* Submit */}
-      <div className="flex items-center gap-4 pt-2">
+      <div className="flex items-center gap-3 pt-1">
         <button
           type="submit"
           disabled={loading}
-          className="flex items-center gap-2 bg-primary text-white px-8 py-4 rounded-2xl font-black hover:bg-primary-dark disabled:opacity-60 transition-all hover:scale-[1.02] active:scale-95 shadow-xl shadow-primary/30"
+          className="flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-xl font-black text-sm hover:bg-primary-dark disabled:opacity-60 transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-primary/30"
         >
-          {loading ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+          {loading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
           {mode === 'new' ? 'Lưu câu hỏi' : 'Cập nhật'}
         </button>
         <button
           type="button"
           onClick={() => router.push('/teacher/questions')}
-          className="px-6 py-4 rounded-2xl font-bold text-gray-500 hover:text-gray-700 hover:bg-gray-50 dark:hover:bg-slate-800 transition-all border border-gray-200 dark:border-slate-700"
+          className="px-5 py-3 rounded-xl font-bold text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-50 dark:hover:bg-slate-800 transition-all border border-gray-200 dark:border-slate-700"
         >
           Huỷ
         </button>
