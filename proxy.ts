@@ -1,10 +1,16 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
-    request,
-  })
+// Routes yêu cầu đăng nhập
+const PROTECTED_ROUTES = ['/dashboard', '/teacher']
+
+// Routes chỉ dành cho teacher
+const TEACHER_ROUTES = ['/teacher']
+
+export async function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl
+
+  let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -15,10 +21,8 @@ export async function updateSession(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({
-            request,
-          })
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+          supabaseResponse = NextResponse.next({ request })
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
           )
@@ -27,14 +31,36 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  // refreshing the auth token
-  await supabase.auth.getUser()
+  // Luôn refresh session token
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const isProtected = PROTECTED_ROUTES.some((r) => pathname.startsWith(r))
+  const isTeacherRoute = TEACHER_ROUTES.some((r) => pathname.startsWith(r))
+
+  // Chưa đăng nhập mà truy cập route được bảo vệ → redirect /login
+  if (isProtected && !user) {
+    const loginUrl = request.nextUrl.clone()
+    loginUrl.pathname = '/login'
+    loginUrl.searchParams.set('next', pathname)
+    return NextResponse.redirect(loginUrl)
+  }
+
+  // Đã đăng nhập nhưng truy cập /teacher/* → kiểm tra role
+  if (isTeacherRoute && user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile || profile.role !== 'teacher') {
+      const dashboardUrl = request.nextUrl.clone()
+      dashboardUrl.pathname = '/dashboard'
+      return NextResponse.redirect(dashboardUrl)
+    }
+  }
 
   return supabaseResponse
-}
-
-export async function proxy(request: NextRequest) {
-  return await updateSession(request)
 }
 
 export const config = {
@@ -44,7 +70,6 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * Feel free to modify this pattern to include more paths.
      */
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],

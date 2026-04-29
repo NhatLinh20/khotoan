@@ -29,6 +29,8 @@ export default function RegisterPage() {
       </div>
 
       <form className="space-y-5" action={handleSubmit}>
+        {/* Mặc định role = student khi đăng ký */}
+        <input type="hidden" name="role" value="student" />
         {error && (
           <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-4 rounded-xl text-sm border border-red-100 dark:border-red-900/30 flex items-center gap-3">
              <div className="h-2 w-2 bg-red-600 rounded-full animate-pulse" />

@@ -49,6 +49,7 @@ export async function register(formData: FormData) {
   const password = formData.get('password') as string
   const full_name = formData.get('full_name') as string
   const grade = parseInt(formData.get('grade') as string)
+  const role = (formData.get('role') as string) || 'student'
 
   const supabase = await createClient()
 
@@ -59,6 +60,7 @@ export async function register(formData: FormData) {
       data: {
         full_name,
         grade,
+        role,
       },
     },
   })
