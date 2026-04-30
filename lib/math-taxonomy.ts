@@ -7,11 +7,12 @@ import { H10, C10 } from './taxonomy/h10_c10'
 import { D11 } from './taxonomy/d11'
 import { H11, C11 } from './taxonomy/h11_c11'
 import { D12, H12, C12 } from './taxonomy/d12_h12'
+import { D6, H6, D7, H7, D8, H8, D9, H9 } from './taxonomy/midschool'
 
 export interface FormItem { value: number; label: string }
 export interface LessonItem { value: number; label: string; forms: FormItem[] }
 export interface ChapterItem { value: number; label: string; lessons: LessonItem[]; subject?: string }
-export interface SubjectGroup { grade: '0'|'1'|'2'; subject: 'D'|'H'|'C'|'ALL'; chapters: ChapterItem[] }
+export interface SubjectGroup { grade: string; subject: string; chapters: ChapterItem[] }
 
 function combineAll(d: ChapterItem[], h: ChapterItem[], c: ChapterItem[]): ChapterItem[] {
   const combined = [
@@ -23,6 +24,22 @@ function combineAll(d: ChapterItem[], h: ChapterItem[], c: ChapterItem[]): Chapt
 }
 
 export const MATH_TAXONOMY: SubjectGroup[] = [
+  { grade: '6', subject: 'D', chapters: D6 },
+  { grade: '6', subject: 'H', chapters: H6 },
+  { grade: '6', subject: 'C', chapters: [] },
+  { grade: '6', subject: 'ALL', chapters: combineAll(D6, H6, []) },
+  { grade: '7', subject: 'D', chapters: D7 },
+  { grade: '7', subject: 'H', chapters: H7 },
+  { grade: '7', subject: 'C', chapters: [] },
+  { grade: '7', subject: 'ALL', chapters: combineAll(D7, H7, []) },
+  { grade: '8', subject: 'D', chapters: D8 },
+  { grade: '8', subject: 'H', chapters: H8 },
+  { grade: '8', subject: 'C', chapters: [] },
+  { grade: '8', subject: 'ALL', chapters: combineAll(D8, H8, []) },
+  { grade: '9', subject: 'D', chapters: D9 },
+  { grade: '9', subject: 'H', chapters: H9 },
+  { grade: '9', subject: 'C', chapters: [] },
+  { grade: '9', subject: 'ALL', chapters: combineAll(D9, H9, []) },
   { grade: '0', subject: 'D', chapters: D10 },
   { grade: '0', subject: 'H', chapters: H10 },
   { grade: '0', subject: 'C', chapters: C10 },

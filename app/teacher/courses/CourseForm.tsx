@@ -53,7 +53,7 @@ export default function CourseForm({
   })
 
   // Mapping for taxonomy
-  const gradeCode = course.grade === 10 ? '0' : course.grade === 11 ? '1' : '2'
+  const gradeCode = course.grade === 10 ? '0' : course.grade === 11 ? '1' : course.grade === 12 ? '2' : String(course.grade)
   const subjectCode = !course.topic ? 'ALL' : (course.topic === 'D' || course.topic === 'Đại số' ? 'D' : course.topic === 'H' || course.topic === 'Hình học' ? 'H' : 'C')
 
   const availableChapters = useMemo(() => getChapters(gradeCode, subjectCode), [gradeCode, subjectCode])
@@ -200,6 +200,10 @@ export default function CourseForm({
                   onChange={e => setCourse({ ...course, grade: Number(e.target.value) })}
                   className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none appearance-none text-[13px]"
                 >
+                  <option value={6}>Lớp 6</option>
+                  <option value={7}>Lớp 7</option>
+                  <option value={8}>Lớp 8</option>
+                  <option value={9}>Lớp 9</option>
                   <option value={10}>Lớp 10</option>
                   <option value={11}>Lớp 11</option>
                   <option value={12}>Lớp 12</option>

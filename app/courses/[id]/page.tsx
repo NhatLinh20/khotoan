@@ -102,7 +102,7 @@ export default async function CourseDetailPage({
   const stars = Math.round(course.rating)
 
   // Group lessons by chapter
-  const gradeCode = course.grade === 10 ? '0' : course.grade === 11 ? '1' : '2'
+  const gradeCode = course.grade === 10 ? '0' : course.grade === 11 ? '1' : course.grade === 12 ? '2' : String(course.grade)
   const topic = course.topic
   let subjectCode: 'D' | 'H' | 'C' | 'ALL' = 'ALL'
   if (topic === 'D' || topic === 'Đại số' || topic === 'Đại số & Thống kê') subjectCode = 'D'

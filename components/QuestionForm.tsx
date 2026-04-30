@@ -11,6 +11,10 @@ const LatexPreview = dynamic(() => import('@/components/LatexPreview'), { ssr: f
 
 // ─── Config ─────────────────────────────────────────────────────────
 const GRADE_OPTIONS = [
+  { value: '6', label: 'Lớp 6' },
+  { value: '7', label: 'Lớp 7' },
+  { value: '8', label: 'Lớp 8' },
+  { value: '9', label: 'Lớp 9' },
   { value: '0', label: 'Lớp 10' },
   { value: '1', label: 'Lớp 11' },
   { value: '2', label: 'Lớp 12' },

@@ -181,6 +181,10 @@ export default function QuestionManager() {
         <div className={`p-2 flex flex-col gap-2 ${codeSearch ? 'opacity-30 pointer-events-none' : ''}`}>
           <SelectField label="① Lớp" value={grade} onChange={(v) => { setGrade(v); setChapter(''); setLesson(''); setForm('') }}>
             <option value="">— Tất cả khối —</option>
+            <option value="6">Lớp 6</option>
+            <option value="7">Lớp 7</option>
+            <option value="8">Lớp 8</option>
+            <option value="9">Lớp 9</option>
             <option value="0">Lớp 10</option>
             <option value="1">Lớp 11</option>
             <option value="2">Lớp 12</option>
