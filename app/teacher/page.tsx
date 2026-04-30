@@ -1,3 +1,4 @@
+import React from 'react'
 import Link from 'next/link'
 import {
   Users, FileText, BookOpen, PenLine,
@@ -46,14 +47,14 @@ export default async function TeacherDashboardPage() {
         {stats.map((stat, i) => (
           <div
             key={i}
-            className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-100 dark:border-slate-800 p-6 flex flex-col gap-4"
+            className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-4 flex flex-col gap-3"
           >
-            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${stat.color}`}>
-              {stat.icon}
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${stat.color}`}>
+              {React.cloneElement(stat.icon as React.ReactElement, { size: 18 })}
             </div>
             <div>
-              <div className="text-3xl font-black text-gray-900 dark:text-white">{stat.value}</div>
-              <div className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">{stat.label}</div>
+              <div className="text-2xl font-black text-gray-900 dark:text-white">{stat.value}</div>
+              <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">{stat.label}</div>
             </div>
           </div>
         ))}
@@ -61,22 +62,22 @@ export default async function TeacherDashboardPage() {
 
       {/* Quick links */}
       <div>
-        <h2 className="text-lg font-black text-gray-900 dark:text-white mb-4">Thao tác nhanh</h2>
-        <div className="grid sm:grid-cols-2 gap-4">
+        <h2 className="text-base font-black text-gray-900 dark:text-white mb-4">Thao tác nhanh</h2>
+        <div className="grid sm:grid-cols-2 gap-3">
           {quickLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="group bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 hover:border-primary/40 rounded-3xl p-6 flex items-center gap-5 transition-all hover:shadow-lg hover:shadow-primary/5"
+              className="group bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 hover:border-primary/40 rounded-2xl p-4 flex items-center gap-4 transition-all hover:shadow-lg hover:shadow-primary/5"
             >
-              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all shrink-0">
                 {link.icon}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-black text-gray-900 dark:text-white group-hover:text-primary transition-colors">{link.label}</p>
-                <p className="text-sm text-gray-400 font-medium truncate">{link.desc}</p>
+                <p className="text-sm font-black text-gray-900 dark:text-white group-hover:text-primary transition-colors">{link.label}</p>
+                <p className="text-xs text-gray-400 font-medium truncate">{link.desc}</p>
               </div>
-              <ArrowRight size={18} className="text-gray-300 group-hover:text-primary group-hover:translate-x-1 transition-all shrink-0" />
+              <ArrowRight size={16} className="text-gray-300 group-hover:text-primary group-hover:translate-x-1 transition-all shrink-0" />
             </Link>
           ))}
         </div>
