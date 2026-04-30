@@ -8,7 +8,6 @@ import { BookOpen, Users, Star, ChevronRight, Filter, LayoutGrid, Check, Search 
 import type { Course } from '@/lib/mock-data'
 
 const GRADES = [6, 7, 8, 9, 10, 11, 12]
-const TOPICS = ['Đại số & Thống kê', 'Hình học', 'Chuyên đề']
 
 function formatPrice(price: number) {
   if (price === 0) return 'Miễn phí'
@@ -20,10 +19,10 @@ function CourseCard({ course }: { course: Course }) {
   return (
     <Link
       href={`/courses/${course.id}`}
-      className="group bg-white dark:bg-slate-900 rounded-3xl overflow-hidden border border-gray-100 dark:border-slate-800 hover:border-primary/40 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-300 flex flex-col"
+      className="group bg-white dark:bg-slate-900 rounded-2xl overflow-hidden border border-gray-100 dark:border-slate-800 hover:border-primary/40 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-300 flex flex-col"
     >
       {/* Thumbnail */}
-      <div className="relative h-44 bg-gradient-to-br from-primary/10 to-primary/20 overflow-hidden">
+      <div className="relative h-32 bg-gradient-to-br from-primary/10 to-primary/20 overflow-hidden">
         {course.thumbnail_url ? (
           <Image
             src={course.thumbnail_url}
@@ -34,58 +33,55 @@ function CourseCard({ course }: { course: Course }) {
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <BookOpen className="text-primary/40 group-hover:text-primary/60 transition-colors" size={64} />
+            <BookOpen className="text-primary/40 group-hover:text-primary/60 transition-colors" size={48} />
           </div>
         )}
-        <div className="absolute top-3 left-3 bg-primary text-white text-xs font-black px-3 py-1.5 rounded-full tracking-wider uppercase shadow-lg">
+        <div className="absolute top-2 left-2 bg-primary text-white text-[10px] font-black px-2.5 py-1 rounded-full tracking-wider uppercase shadow-lg">
           Lớp {course.grade}
         </div>
-        <div className="absolute top-3 right-3 bg-white/90 dark:bg-slate-900/90 text-gray-700 dark:text-gray-200 text-[10px] font-bold px-2.5 py-1 rounded-full backdrop-blur-sm">
+        <div className="absolute top-2 right-2 bg-white/90 dark:bg-slate-900/90 text-gray-700 dark:text-gray-200 text-[9px] font-bold px-2 py-0.5 rounded-full backdrop-blur-sm">
           {course.topic}
         </div>
         {course.price === 0 && (
-          <div className="absolute bottom-3 right-3 bg-emerald-500 text-white text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-widest shadow-lg">
+          <div className="absolute bottom-2 right-2 bg-emerald-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest shadow-lg">
             Miễn phí
           </div>
         )}
       </div>
 
-      <div className="p-6 flex flex-col flex-1 gap-3">
-        <h3 className="text-base font-black text-gray-900 dark:text-white line-clamp-2 group-hover:text-primary transition-colors leading-snug">
+      <div className="p-4 flex flex-col flex-1 gap-2">
+        <h3 className="text-sm font-black text-gray-900 dark:text-white line-clamp-2 group-hover:text-primary transition-colors leading-snug">
           {course.title}
         </h3>
-        <p className="text-gray-500 dark:text-gray-400 text-sm line-clamp-2 leading-relaxed flex-1">
-          {course.description}
-        </p>
-
+        
         <p className="text-xs font-bold text-gray-600 dark:text-gray-400 flex items-center gap-1.5">
-          <span className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[10px] font-black shrink-0">GV</span>
+          <span className="w-4 h-4 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[8px] font-black shrink-0">GV</span>
           {course.teacher_name}
         </p>
 
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5">
             {Array.from({ length: 5 }).map((_, i) => (
               <Star
                 key={i}
-                size={13}
+                size={11}
                 className={i < stars ? 'text-secondary fill-secondary' : 'text-gray-300 dark:text-gray-600'}
               />
             ))}
-            <span className="text-xs font-bold text-gray-500 ml-1">{course.rating.toFixed(1)}</span>
+            <span className="text-[10px] font-bold text-gray-500 ml-1">{course.rating.toFixed(1)}</span>
           </div>
-          <div className="flex items-center gap-1 text-xs text-gray-400 font-medium">
-            <Users size={13} />
+          <div className="flex items-center gap-1 text-[10px] text-gray-400 font-medium">
+            <Users size={11} />
             {course.student_count.toLocaleString('vi-VN')}
           </div>
         </div>
 
-        <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-slate-800 mt-auto">
-          <span className={`text-lg font-black ${course.price === 0 ? 'text-emerald-600' : 'text-primary'}`}>
+        <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-slate-800 mt-auto">
+          <span className={`text-base font-black ${course.price === 0 ? 'text-emerald-600' : 'text-primary'}`}>
             {formatPrice(course.price)}
           </span>
-          <span className="text-xs font-bold text-primary flex items-center gap-0.5 group-hover:gap-1.5 transition-all">
-            Xem chi tiết <ChevronRight size={14} />
+          <span className="text-[10px] font-bold text-primary flex items-center gap-0.5 group-hover:gap-1 transition-all">
+            Chi tiết <ChevronRight size={12} />
           </span>
         </div>
       </div>
@@ -99,7 +95,6 @@ export default function CourseExplorer({ initialCourses }: { initialCourses: Cou
 
   const [level, setLevel] = useState(searchParams.get('level') || '')
   const [grade, setGrade] = useState(searchParams.get('grade') ? parseInt(searchParams.get('grade')!) : null)
-  const [topic, setTopic] = useState(searchParams.get('topic') || '')
   const [searchQuery, setSearchQuery] = useState('')
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false)
 
@@ -107,10 +102,9 @@ export default function CourseExplorer({ initialCourses }: { initialCourses: Cou
   useEffect(() => {
     setLevel(searchParams.get('level') || '')
     setGrade(searchParams.get('grade') ? parseInt(searchParams.get('grade')!) : null)
-    setTopic(searchParams.get('topic') || '')
   }, [searchParams])
 
-  const updateFilters = (newFilters: { level?: string; grade?: number | null; topic?: string }) => {
+  const updateFilters = (newFilters: { level?: string; grade?: number | null }) => {
     const params = new URLSearchParams(searchParams.toString())
     
     if ('level' in newFilters) {
@@ -124,11 +118,6 @@ export default function CourseExplorer({ initialCourses }: { initialCourses: Cou
       else params.delete('grade')
     }
 
-    if ('topic' in newFilters) {
-      if (newFilters.topic) params.set('topic', newFilters.topic)
-      else params.delete('topic')
-    }
-
     router.push(`/courses?${params.toString()}`, { scroll: false })
   }
 
@@ -137,11 +126,10 @@ export default function CourseExplorer({ initialCourses }: { initialCourses: Cou
       if (level === 'THCS' && (c.grade < 6 || c.grade > 9)) return false
       if (level === 'THPT' && (c.grade < 10 || c.grade > 12)) return false
       if (grade && c.grade !== grade) return false
-      if (topic && c.topic !== topic) return false
       if (searchQuery && !c.title.toLowerCase().includes(searchQuery.toLowerCase())) return false
       return true
     })
-  }, [initialCourses, level, grade, topic, searchQuery])
+  }, [initialCourses, level, grade, searchQuery])
 
   const thcsGrades = GRADES.filter((g) => g <= 9)
   const thptGrades = GRADES.filter((g) => g >= 10)
@@ -215,53 +203,14 @@ export default function CourseExplorer({ initialCourses }: { initialCourses: Cou
         </div>
       </div>
 
-      {/* Chủ đề */}
-      <div className="space-y-3">
-        <h3 className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2">
-          <BookOpen size={10} className="text-secondary" /> Chủ đề
-        </h3>
-        <div className="flex flex-col gap-0.5">
-          <button
-            onClick={() => {
-              updateFilters({ topic: '' })
-              if (window.innerWidth < 768) setIsMobileFilterOpen(false)
-            }}
-            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
-              topic === ''
-                ? 'bg-secondary/5 text-secondary'
-                : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-slate-800'
-            }`}
-          >
-            Tất cả chủ đề
-            {topic === '' && <Check size={14} className="text-secondary" />}
-          </button>
-          {TOPICS.map((tp) => (
-            <button
-              key={tp}
-              onClick={() => {
-                updateFilters({ topic: topic === tp ? '' : tp })
-                if (window.innerWidth < 768) setIsMobileFilterOpen(false)
-              }}
-              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${
-                topic === tp
-                  ? 'bg-secondary/5 text-secondary'
-                  : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-slate-800'
-              }`}
-            >
-              {tp}
-              {topic === tp && <Check size={14} className="text-secondary" />}
-            </button>
-          ))}
-        </div>
-      </div>
+
 
       {/* Reset All */}
-      {(level || grade || topic || searchQuery) && (
+      {(level || grade || searchQuery) && (
         <button 
           onClick={() => {
             setLevel('')
             setGrade(null)
-            setTopic('')
             setSearchQuery('')
             router.push('/courses', { scroll: false })
             if (window.innerWidth < 768) setIsMobileFilterOpen(false)
@@ -290,7 +239,7 @@ export default function CourseExplorer({ initialCourses }: { initialCourses: Cou
             <div className="text-left">
               <p className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-wider">Bộ lọc</p>
               <p className="text-[10px] font-bold text-gray-400">
-                {level || 'Tất cả'} • Lớp {grade || '...'} • {topic || 'Tất cả'}
+                {level || 'Tất cả'} • Lớp {grade || '...'}
               </p>
             </div>
           </div>

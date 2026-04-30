@@ -257,36 +257,38 @@ export default async function CourseDetailPage({
             
             {/* Price & Enroll Card - Only show if NOT enrolled */}
             {!isEnrolled && (
-              <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-100 dark:border-slate-800 p-8 shadow-xl shadow-gray-100 dark:shadow-none shrink-0">
-                {/* Price */}
-                <div className="mb-6 text-center">
-                  <div className={`text-4xl font-black mb-1 ${course.price === 0 ? 'text-emerald-600' : 'text-primary'}`}>
-                    {formatPrice(course.price)}
+              <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-100 dark:border-slate-800 p-5 shadow-xl shadow-gray-100 dark:shadow-none shrink-0">
+                {/* Price (only show if > 0) */}
+                {course.price > 0 && (
+                  <div className="mb-4 text-center">
+                    <div className="text-3xl font-black mb-1 text-primary">
+                      {formatPrice(course.price)}
+                    </div>
+                    <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Học mãi mãi</p>
                   </div>
-                  {course.price > 0 && (
-                    <p className="text-sm text-gray-400 font-medium">Thanh toán một lần, học mãi mãi</p>
-                  )}
-                </div>
+                )}
 
                 {/* Enroll Button */}
-                <EnrollButton
-                  courseId={course.id}
-                  isEnrolled={isEnrolled}
-                  isLoggedIn={!!user}
-                  price={course.price}
-                />
+                <div className={course.price > 0 ? '' : 'mt-2'}>
+                  <EnrollButton
+                    courseId={course.id}
+                    isEnrolled={isEnrolled}
+                    isLoggedIn={!!user}
+                    price={course.price}
+                  />
+                </div>
 
                 {/* What's included */}
-                <div className="mt-6 pt-6 border-t border-gray-100 dark:border-slate-800 flex flex-col gap-3">
-                  <p className="text-xs uppercase font-black text-gray-400 tracking-widest mb-1">Bao gồm</p>
+                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-800 flex flex-col gap-2">
+                  <p className="text-[10px] uppercase font-black text-gray-400 tracking-widest mb-0.5">Bao gồm</p>
                   {[
-                    { icon: <Video size={15} className="text-blue-500" />, label: `${lessons.filter(l => l.video_url).length} bài giảng video` },
-                    { icon: <FileText size={15} className="text-red-500" />, label: `${lessons.filter(l => l.pdf_url).length} tài liệu PDF` },
-                    { icon: <Clock size={15} className="text-emerald-500" />, label: `${totalDuration} phút nội dung` },
-                    { icon: <GraduationCap size={15} className="text-primary" />, label: 'Chứng chỉ hoàn thành' },
-                    { icon: <Users size={15} className="text-secondary" />, label: 'Hỗ trợ giải đáp' },
+                    { icon: <Video size={13} className="text-blue-500" />, label: `${lessons.filter(l => l.video_url).length} bài giảng video` },
+                    { icon: <FileText size={13} className="text-red-500" />, label: `${lessons.filter(l => l.pdf_url).length} tài liệu PDF` },
+                    { icon: <Clock size={13} className="text-emerald-500" />, label: `${totalDuration} phút nội dung` },
+                    { icon: <GraduationCap size={13} className="text-primary" />, label: 'Chứng chỉ' },
+                    { icon: <Users size={13} className="text-secondary" />, label: 'Hỗ trợ' },
                   ].map(({ icon, label }) => (
-                    <div key={label} className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400 font-medium">
+                    <div key={label} className="flex items-center gap-2.5 text-xs text-gray-600 dark:text-gray-400 font-medium">
                       {icon}
                       {label}
                     </div>
