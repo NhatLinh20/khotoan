@@ -1,37 +1,44 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import {
-  Pencil, BookOpen, Clock, CheckCircle2, XCircle,
-  ChevronRight, ChevronLeft,
-  Lightbulb, Search, Filter, X, RotateCcw
+import React, { useState, useEffect, useMemo } from 'react'
+import { 
+  Search, Filter, ChevronLeft, ChevronRight, Pencil, 
+  BookOpen, CheckCircle2, RotateCcw, X, Lightbulb, Clock, XCircle
 } from 'lucide-react'
-import dynamic from 'next/dynamic'
-import DeleteQuestionButton from './DeleteButton'
+import Link from 'next/link'
 import { getChapters, getLessons, getForms } from '@/lib/math-taxonomy'
-
-const LatexPreview = dynamic(() => import('@/components/LatexPreview'), { ssr: false })
-
-// ─── Labels ──────────────────────────────────────────────────────────
-const GRADE_LABELS: Record<string, string> = { '0': 'Lớp 10', '1': 'Lớp 11', '2': 'Lớp 12' }
-const SUBJECT_LABELS: Record<string, string> = { D: 'Đại số/XS/TK', H: 'Hình học', C: 'Chuyên đề' }
-const DIFFICULTY_LABELS: Record<string, string> = { N: 'Nhận biết', H: 'Thông hiểu', V: 'Vận dụng', C: 'VD Cao' }
-const TYPE_LABELS: Record<string, string> = { mc: 'Trắc nghiệm', tf: 'Đúng/Sai', short: 'Trả lời ngắn', essay: 'Tự luận' }
-const DIFFICULTY_COLORS: Record<string, string> = {
-  N: 'bg-emerald-500 text-white', H: 'bg-blue-500 text-white',
-  V: 'bg-orange-500 text-white',  C: 'bg-red-500 text-white',
-}
+import DeleteQuestionButton from './DeleteButton'
+import { createClient } from '@/lib/supabase/client'
+import LatexPreview from '@/components/LatexPreview'
 
 interface Question {
-  id: string; question_code: string; content: string; type: string
-  grade_code: string | null; subject_type: string | null; difficulty: string | null
-  chapter: number | null; lesson: number | null; form: number | null
-  image_url: string | null; option_a: string | null; option_b: string | null
-  option_c: string | null; option_d: string | null; correct_answer: string | null
+  id: string; question_code: string; type: string; difficulty: string;
+  content: string; image_url: string | null;
+  option_a: string | null; option_b: string | null; option_c: string | null; option_d: string | null;
+  correct_answer: string | null;
   correct_number: number | null; solution_guide: string | null; max_score: number | null
   question_tf_items?: { label: string; content: string; is_correct: boolean }[]
+}
+
+const TYPE_LABELS: Record<string, string> = {
+  mc: 'Trắc nghiệm',
+  tf: 'Đúng/Sai',
+  short: 'Trả lời ngắn',
+  essay: 'Tự luận'
+}
+
+const DIFFICULTY_LABELS: Record<string, string> = {
+  N: 'Nhận biết',
+  H: 'Thông hiểu',
+  V: 'Vận dụng',
+  C: 'Vận dụng cao'
+}
+
+const DIFFICULTY_COLORS: Record<string, string> = {
+  N: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+  H: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+  V: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+  C: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
 }
 
 // ─── Shared select style (matches QuestionForm) ──────────────────────
@@ -58,17 +65,14 @@ function SelectField({ label, value, onChange, disabled, children }: {
           {children}
         </select>
         <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400">
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-            <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
+          <ChevronRight size={14} className="rotate-90" />
         </div>
       </div>
     </div>
   )
 }
 
-// ─── Compact Question Card ────────────────────────────────────────────
-function QuestionCard({ q, active, onClick }: { q: Question; active: boolean; onClick: () => void }) {
+function QuestionCard({ q, active, onClick }: { q: Question, active: boolean, onClick: () => void }) {
   return (
     <button
       onClick={onClick}
@@ -96,56 +100,48 @@ function QuestionCard({ q, active, onClick }: { q: Question; active: boolean; on
   )
 }
 
-// ─── Main ─────────────────────────────────────────────────────────────
-export default function QuestionManager({
-  questions,
-  initialParams,
-}: {
-  questions: Question[]
-  initialParams: Record<string, string | undefined>
-}) {
-  const router = useRouter()
+export default function QuestionManager() {
+  const supabase = createClient()
+  const [grade, setGrade] = useState('')
+  const [subject, setSubject] = useState('')
+  const [chapter, setChapter] = useState('')
+  const [lesson, setLesson] = useState('')
+  const [form, setForm] = useState('')
+  const [difficulty, setDifficulty] = useState('')
+  const [qType, setQType] = useState('')
+  const [codeSearch, setCodeSearch] = useState('')
 
-  // Active filters from URL
-  const [grade, setGrade] = useState(initialParams.grade ?? '')
-  const [subject, setSubject] = useState(initialParams.subject ?? '')
-  const [chapter, setChapter] = useState(initialParams.chapter ?? '')
-  const [lesson, setLesson] = useState(initialParams.lesson ?? '')
-  const [difficulty, setDifficulty] = useState(initialParams.difficulty ?? '')
-  const [form, setForm] = useState(initialParams.form ?? '')
-  const [qType, setQType] = useState(initialParams.type ?? '')
-  const [codeSearch, setCodeSearch] = useState(initialParams.code ?? '')
+  const [questions, setQuestions] = useState<Question[]>([])
+  const [loading, setLoading] = useState(false)
   const [currentIndex, setCurrentIndex] = useState(0)
 
-  // Derived taxonomy
-  const chapters = useMemo(() => grade && subject ? getChapters(grade, subject) : [], [grade, subject])
-  const lessons = useMemo(() => grade && subject && chapter ? getLessons(grade, subject, parseInt(chapter)) : [], [grade, subject, chapter])
-  const forms = useMemo(() => grade && subject && chapter && lesson ? getForms(grade, subject, parseInt(chapter), parseInt(lesson)) : [], [grade, subject, chapter, lesson])
+  const chapters = useMemo(() => getChapters(grade, subject), [grade, subject])
+  const lessons = useMemo(() => getLessons(grade, subject, Number(chapter)), [grade, subject, chapter])
+  const forms = useMemo(() => getForms(grade, subject, Number(chapter), Number(lesson)), [grade, subject, chapter, lesson])
 
-  // Reset cascades
-  useEffect(() => { setChapter(''); setLesson(''); setForm('') }, [grade, subject])
-  useEffect(() => { setLesson(''); setForm('') }, [chapter])
-  useEffect(() => { setForm('') }, [lesson])
-
-  // Sync to URL
   useEffect(() => {
-    const p = new URLSearchParams()
-    if (codeSearch) { p.set('code', codeSearch) }
-    else {
-      if (grade)      p.set('grade', grade)
-      if (subject)    p.set('subject', subject)
-      if (chapter)    p.set('chapter', chapter)
-      if (lesson)     p.set('lesson', lesson)
-      if (difficulty) p.set('difficulty', difficulty)
-      if (form)       p.set('form', form)
-      if (qType)      p.set('type', qType)
+    async function fetchQuestions() {
+      setLoading(true)
+      let query = supabase.from('questions').select('*')
+
+      if (codeSearch) {
+        query = query.ilike('question_code', `%${codeSearch}%`)
+      } else {
+        if (grade) query = query.eq('grade', grade)
+        if (subject) query = query.eq('subject', subject)
+        if (chapter) query = query.eq('chapter', Number(chapter))
+        if (lesson) query = query.eq('lesson', Number(lesson))
+        if (form) query = query.eq('form', Number(form))
+        if (difficulty) query = query.eq('difficulty', difficulty)
+        if (qType) query = query.eq('type', qType)
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false })
+      if (!error && data) setQuestions(data)
+      setLoading(false)
     }
-    const timer = setTimeout(() => {
-      router.push(`/teacher/questions?${p.toString()}`, { scroll: false })
-      setCurrentIndex(0)
-    }, 300)
-    return () => clearTimeout(timer)
-  }, [grade, subject, chapter, lesson, difficulty, form, qType, codeSearch])
+    fetchQuestions()
+  }, [grade, subject, chapter, lesson, form, difficulty, qType, codeSearch, supabase])
 
   useEffect(() => { setCurrentIndex(0) }, [questions])
 
@@ -173,9 +169,9 @@ export default function QuestionManager({
               placeholder="Tìm theo mã ID..."
               className="w-full pl-8 pr-8 py-1.5 bg-gray-50 dark:bg-slate-800 rounded-lg text-[11px] font-mono font-bold focus:outline-none focus:ring-2 focus:ring-primary/20 placeholder:text-gray-300 placeholder:font-sans"
             />
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-300" size={12} />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" size={12} />
             {codeSearch && (
-              <button onClick={() => setCodeSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500">
+              <button onClick={() => setCodeSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
                 <X size={12} />
               </button>
             )}
@@ -324,7 +320,7 @@ export default function QuestionManager({
                       <BookOpen size={12} />
                       <span className="text-[9px] font-black uppercase tracking-widest">Nội dung câu hỏi</span>
                     </div>
-                    <div className="text-sm leading-relaxed text-gray-900 dark:text-gray-100 bg-gray-50/50 dark:bg-slate-800/30 p-4 rounded-xl border border-gray-100 dark:border-slate-800">
+                    <div className="text-sm leading-relaxed text-gray-900 dark:text-gray-100 bg-gray-50/50 dark:bg-slate-800/30 p-3 rounded-xl border border-gray-100 dark:border-slate-800">
                       <LatexPreview content={selectedQ.content} />
                     </div>
                     {selectedQ.image_url && (
@@ -349,7 +345,7 @@ export default function QuestionManager({
                           const val = selectedQ[`option_${letter.toLowerCase()}` as keyof Question] as string
                           const isCorrect = selectedQ.correct_answer === letter
                           return (
-                            <div key={letter} className={`flex items-start gap-3 p-3 rounded-xl border-2 ${
+                            <div key={letter} className={`flex items-start gap-3 p-2.5 rounded-xl border-2 ${
                               isCorrect ? 'bg-emerald-50/50 border-emerald-400 text-emerald-900' : 'bg-white border-gray-100 dark:bg-slate-800 dark:border-slate-700'
                             }`}>
                               <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black shrink-0 ${isCorrect ? 'bg-emerald-500 text-white' : 'bg-gray-100 dark:bg-slate-700 text-gray-500'}`}>{letter}</span>
@@ -364,7 +360,7 @@ export default function QuestionManager({
                     {selectedQ.type === 'tf' && (
                       <div className="flex flex-col gap-2">
                         {selectedQ.question_tf_items?.map((item) => (
-                          <div key={item.label} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700">
+                          <div key={item.label} className="flex items-center gap-3 p-2.5 rounded-xl bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700">
                             <span className="w-6 h-6 rounded-lg bg-white dark:bg-slate-700 border border-gray-200 flex items-center justify-center text-[9px] font-black text-gray-400">{item.label.toUpperCase()}</span>
                             <div className="flex-1 text-sm font-bold"><LatexPreview content={item.content} /></div>
                             <span className={`px-2.5 py-1 rounded-lg text-[8px] font-black flex items-center gap-1 ${item.is_correct ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'}`}>
@@ -399,7 +395,7 @@ export default function QuestionManager({
                           <Lightbulb size={12} />
                           <span className="text-[9px] font-black uppercase tracking-widest">Lời giải</span>
                         </div>
-                        <div className="bg-amber-50/30 dark:bg-amber-900/5 p-4 rounded-xl border border-amber-100 dark:border-amber-900/20 text-sm leading-relaxed">
+                        <div className="bg-amber-50/30 dark:bg-amber-900/5 p-3 rounded-xl border border-amber-100 dark:border-amber-900/20 text-sm leading-relaxed">
                           <LatexPreview content={selectedQ.solution_guide} />
                         </div>
                       </div>
