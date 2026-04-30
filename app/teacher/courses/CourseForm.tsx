@@ -91,6 +91,7 @@ export default function CourseForm({
   }
 
   const handleRemoveLesson = (tempId: string) => {
+    if (!window.confirm("Bạn có chắc muốn xóa không?")) return;
     const newLessons = lessons.filter(l => l._tempId !== tempId)
     newLessons.forEach((l, i) => {
       l.order_index = i + 1

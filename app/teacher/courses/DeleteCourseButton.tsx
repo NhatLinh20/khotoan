@@ -8,7 +8,7 @@ export default function DeleteCourseButton({ id }: { id: string }) {
   const [isPending, startTransition] = useTransition()
 
   const handleDelete = () => {
-    if (confirm('Bạn có chắc chắn muốn xoá khóa học này? Mọi bài học và dữ liệu liên quan sẽ bị xóa!')) {
+    if (confirm('Bạn có chắc muốn xóa không?')) {
       startTransition(async () => {
         await deleteCourse(id)
       })

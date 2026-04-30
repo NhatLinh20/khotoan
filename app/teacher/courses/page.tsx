@@ -45,17 +45,11 @@ export default async function TeacherCoursesPage() {
           <table className="w-full text-left border-collapse text-[13px]">
             <thead>
               <tr className="bg-gray-50/50 dark:bg-slate-800/50">
-                <th className="px-4 py-3 text-[11px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider w-[60px]">
-                  Ảnh
-                </th>
                 <th className="px-4 py-3 text-[11px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Khóa học
                 </th>
                 <th className="px-4 py-3 text-[11px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Phân loại
-                </th>
-                <th className="px-4 py-3 text-[11px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Giá
                 </th>
                 <th className="px-4 py-3 text-[11px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider text-center">
                   Học viên
@@ -79,19 +73,6 @@ export default async function TeacherCoursesPage() {
                 courses.map((course) => (
                   <tr key={course.id} className="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
                     <td className="px-4 py-3">
-                      {course.thumbnail_url ? (
-                        <img 
-                          src={course.thumbnail_url} 
-                          alt={course.title} 
-                          className="w-12 h-8 object-cover rounded-md border border-gray-100 dark:border-slate-700" 
-                        />
-                      ) : (
-                        <div className="w-12 h-8 bg-gray-100 dark:bg-slate-800 rounded-md flex items-center justify-center text-gray-400 border border-gray-100 dark:border-slate-700">
-                          <ImageIcon size={14} />
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
                       <div className="font-bold text-gray-900 dark:text-white line-clamp-1">
                         {course.title}
                       </div>
@@ -110,15 +91,6 @@ export default async function TeacherCoursesPage() {
                           </span>
                         )}
                       </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="font-bold text-gray-900 dark:text-white">
-                        {Number(course.price) === 0 ? (
-                          <span className="text-green-600 dark:text-green-400">Miễn phí</span>
-                        ) : (
-                          `${Number(course.price).toLocaleString('vi-VN')}đ`
-                        )}
-                      </span>
                     </td>
                     <td className="px-4 py-3 text-center">
                       <span className="inline-flex items-center justify-center min-w-[1.5rem] px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-slate-800 text-[11px] font-black text-gray-600 dark:text-gray-400">
