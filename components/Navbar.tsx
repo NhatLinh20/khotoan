@@ -58,7 +58,7 @@ export default function Navbar({ user, profile }: NavbarProps) {
                     {user.user_metadata?.full_name || 'Học viên'}
                   </span>
                   <span className="text-[10px] uppercase font-black text-secondary tracking-widest">
-                    Lớp {user.user_metadata?.grade || '?'}
+                    {isTeacher ? 'Giáo viên' : `Lớp ${user.user_metadata?.grade || '?'}`}
                   </span>
                 </div>
               </div>
@@ -116,7 +116,7 @@ export default function Navbar({ user, profile }: NavbarProps) {
                     </div>
                     <div>
                       <p className="font-bold text-gray-900">{user.user_metadata?.full_name}</p>
-                      <p className="text-sm text-gray-500">Lớp {user.user_metadata?.grade}</p>
+                      <p className="text-sm text-gray-500">{isTeacher ? 'Giáo viên' : `Lớp ${user.user_metadata?.grade}`}</p>
                     </div>
                   </div>
                   <button 

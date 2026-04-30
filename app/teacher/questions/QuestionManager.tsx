@@ -35,8 +35,8 @@ interface Question {
 }
 
 // ─── Shared select style (matches QuestionForm) ──────────────────────
-const selectCls = 'w-full px-3 py-2.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all appearance-none cursor-pointer'
-const labelCls = 'block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1'
+const selectCls = 'w-full px-2 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-[12px] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all appearance-none cursor-pointer'
+const labelCls = 'block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1'
 
 function SelectField({ label, value, onChange, disabled, children }: {
   label: string
@@ -162,10 +162,10 @@ export default function QuestionManager({
     <div className="flex gap-4 items-start">
 
       {/* ── LEFT: SIDEBAR FILTER ── */}
-      <div className="w-64 shrink-0 bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 overflow-hidden sticky top-4">
+      <div className="w-[220px] shrink-0 bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 overflow-hidden sticky top-4">
 
         {/* Search by code */}
-        <div className="p-3 border-b border-gray-100 dark:border-slate-800">
+        <div className="p-2 border-b border-gray-100 dark:border-slate-800">
           <div className="relative">
             <input
               type="text"
@@ -196,7 +196,7 @@ export default function QuestionManager({
         </div>
 
         {/* Cascading dropdowns */}
-        <div className={`p-3 flex flex-col gap-3 ${codeSearch ? 'opacity-30 pointer-events-none' : ''}`}>
+        <div className={`p-2 flex flex-col gap-2 ${codeSearch ? 'opacity-30 pointer-events-none' : ''}`}>
           <SelectField label="① Lớp" value={grade} onChange={setGrade}>
             <option value="">— Tất cả khối —</option>
             <option value="0">Lớp 10</option>
@@ -251,7 +251,7 @@ export default function QuestionManager({
 
         {/* Reset */}
         {hasFilters && (
-          <div className="p-3 border-t border-gray-100 dark:border-slate-800">
+          <div className="p-2 border-t border-gray-100 dark:border-slate-800">
             <button
               onClick={resetAll}
               className="w-full flex items-center justify-center gap-1.5 py-2 text-[9px] font-black text-red-500 uppercase tracking-widest border border-dashed border-red-200 rounded-lg hover:bg-red-50 transition-colors"
@@ -297,40 +297,45 @@ export default function QuestionManager({
 
         {/* Question list (compact cards) + Preview */}
         <div className="flex gap-3 items-start">
-
-          {/* Mini list */}
-          {total > 0 && (
-            <div className="w-52 shrink-0 flex flex-col gap-1.5 max-h-[700px] overflow-y-auto pr-1">
-              {questions.map((q, i) => (
-                <QuestionCard key={q.id} q={q} active={i === currentIndex} onClick={() => setCurrentIndex(i)} />
-              ))}
-            </div>
-          )}
-
           {/* Preview */}
           <div className="flex-1 min-w-0 bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 overflow-hidden min-h-[500px] flex flex-col">
             {selectedQ ? (
               <>
                 {/* Preview header */}
-                <div className="px-3 py-1.5 border-b border-gray-50 dark:border-slate-800 flex justify-end gap-1.5 bg-gray-50/50 dark:bg-slate-800/20">
-                  <Link
-                    href={`/teacher/questions/${selectedQ.id}/edit`}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-600 text-white rounded-lg text-[9px] font-black hover:bg-blue-700 transition-all shadow-sm"
-                  >
-                    <Pencil size={10} /> Sửa
-                  </Link>
-                  <DeleteQuestionButton id={selectedQ.id} />
+                <div className="px-3 py-1.5 border-b border-gray-50 dark:border-slate-800 flex items-center justify-between bg-gray-50/50 dark:bg-slate-800/20">
+                  <div className="flex items-center gap-2">
+                    <span className="font-black text-xs tracking-wider text-gray-900 dark:text-white">
+                      {selectedQ.question_code}
+                    </span>
+                    <span className="px-1.5 py-0.5 rounded text-[8px] font-black bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400">
+                      {TYPE_LABELS[selectedQ.type]}
+                    </span>
+                    {selectedQ.difficulty && (
+                      <span className={`px-1.5 py-0.5 rounded text-[8px] font-black ${DIFFICULTY_COLORS[selectedQ.difficulty]}`}>
+                        {DIFFICULTY_LABELS[selectedQ.difficulty]}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Link
+                      href={`/teacher/questions/${selectedQ.id}/edit`}
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-600 text-white rounded-lg text-[9px] font-black hover:bg-blue-700 transition-all shadow-sm"
+                    >
+                      <Pencil size={10} /> Sửa
+                    </Link>
+                    <DeleteQuestionButton id={selectedQ.id} />
+                  </div>
                 </div>
 
                 {/* Preview body */}
-                <div className="flex-1 p-5 space-y-5 overflow-y-auto max-h-[650px]">
+                <div className="flex-1 p-4 space-y-4 overflow-y-auto max-h-[650px]">
                   {/* Content */}
                   <div>
                     <div className="flex items-center gap-1.5 text-primary mb-2">
                       <BookOpen size={12} />
                       <span className="text-[9px] font-black uppercase tracking-widest">Nội dung câu hỏi</span>
                     </div>
-                    <div className="text-sm leading-relaxed text-gray-900 dark:text-gray-100 bg-gray-50/50 dark:bg-slate-800/30 p-4 rounded-xl border border-gray-100 dark:border-slate-800">
+                    <div className="text-sm leading-relaxed text-gray-900 dark:text-gray-100 bg-gray-50/50 dark:bg-slate-800/30 p-3 rounded-xl border border-gray-100 dark:border-slate-800">
                       <LatexPreview content={selectedQ.content} />
                     </div>
                     {selectedQ.image_url && (
@@ -355,7 +360,7 @@ export default function QuestionManager({
                           const val = selectedQ[`option_${letter.toLowerCase()}` as keyof Question] as string
                           const isCorrect = selectedQ.correct_answer === letter
                           return (
-                            <div key={letter} className={`flex items-start gap-3 p-3 rounded-xl border-2 ${
+                            <div key={letter} className={`flex items-start gap-3 p-2.5 rounded-xl border-2 ${
                               isCorrect ? 'bg-emerald-50/50 border-emerald-400 text-emerald-900' : 'bg-white border-gray-100 dark:bg-slate-800 dark:border-slate-700'
                             }`}>
                               <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black shrink-0 ${isCorrect ? 'bg-emerald-500 text-white' : 'bg-gray-100 dark:bg-slate-700 text-gray-500'}`}>{letter}</span>
@@ -370,7 +375,7 @@ export default function QuestionManager({
                     {selectedQ.type === 'tf' && (
                       <div className="flex flex-col gap-2">
                         {selectedQ.question_tf_items?.map((item) => (
-                          <div key={item.label} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700">
+                          <div key={item.label} className="flex items-center gap-3 p-2.5 rounded-xl bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700">
                             <span className="w-6 h-6 rounded-lg bg-white dark:bg-slate-700 border border-gray-200 flex items-center justify-center text-[9px] font-black text-gray-400">{item.label.toUpperCase()}</span>
                             <div className="flex-1 text-sm font-bold"><LatexPreview content={item.content} /></div>
                             <span className={`px-2.5 py-1 rounded-lg text-[8px] font-black flex items-center gap-1 ${item.is_correct ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'}`}>
@@ -405,7 +410,7 @@ export default function QuestionManager({
                           <Lightbulb size={12} />
                           <span className="text-[9px] font-black uppercase tracking-widest">Lời giải</span>
                         </div>
-                        <div className="bg-amber-50/30 dark:bg-amber-900/5 p-4 rounded-xl border border-amber-100 dark:border-amber-900/20 text-sm leading-relaxed">
+                        <div className="bg-amber-50/30 dark:bg-amber-900/5 p-3 rounded-xl border border-amber-100 dark:border-amber-900/20 text-sm leading-relaxed">
                           <LatexPreview content={selectedQ.solution_guide} />
                         </div>
                       </div>
