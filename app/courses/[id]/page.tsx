@@ -71,7 +71,7 @@ export default async function CourseDetailPage({
 
   // Determine active lesson
   let activeLesson = null
-  if (isEnrolled && lessons.length > 0) {
+  if (lessons.length > 0) {
     if (lessonIdParam) {
       activeLesson = lessons.find(l => l.id === lessonIdParam) || lessons[0]
     } else {
@@ -103,7 +103,12 @@ export default async function CourseDetailPage({
 
   // Group lessons by chapter
   const gradeCode = course.grade === 10 ? '0' : course.grade === 11 ? '1' : '2'
-  const subjectCode = course.topic === 'D' || course.topic === 'Đại số' ? 'D' : course.topic === 'H' || course.topic === 'Hình học' ? 'H' : 'C'
+  const topic = course.topic
+  let subjectCode: 'D' | 'H' | 'C' | 'ALL' = 'ALL'
+  if (topic === 'D' || topic === 'Đại số' || topic === 'Đại số & Thống kê') subjectCode = 'D'
+  else if (topic === 'H' || topic === 'Hình học') subjectCode = 'H'
+  else if (topic === 'C' || topic === 'Chuyên đề') subjectCode = 'C'
+  
   const availableChapters = getChapters(gradeCode, subjectCode)
   
   const lessonsByChapter: Record<number, typeof lessons> = {}
