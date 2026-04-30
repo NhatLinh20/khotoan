@@ -31,7 +31,9 @@ CREATE TABLE public.lessons (
   video_url text,
   pdf_url text,
   order_index int,
-  duration_minutes int
+  duration_minutes int,
+  chapter int,
+  lesson_ref int
 );
 
 -- 4. Bảng questions
@@ -126,7 +128,14 @@ CREATE POLICY "Public read question_tf_items" ON public.question_tf_items FOR SE
 
 -- RLS phụ: courses và lessons (Thường public read để ai cũng xem được danh sách khóa học/bài học)
 CREATE POLICY "Public read courses" ON public.courses FOR SELECT USING (true);
+CREATE POLICY "Authenticated users can insert courses" ON public.courses FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Authenticated users can update courses" ON public.courses FOR UPDATE USING (auth.role() = 'authenticated');
+CREATE POLICY "Authenticated users can delete courses" ON public.courses FOR DELETE USING (auth.role() = 'authenticated');
+
 CREATE POLICY "Public read lessons" ON public.lessons FOR SELECT USING (true);
+CREATE POLICY "Authenticated users can insert lessons" ON public.lessons FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Authenticated users can update lessons" ON public.lessons FOR UPDATE USING (auth.role() = 'authenticated');
+CREATE POLICY "Authenticated users can delete lessons" ON public.lessons FOR DELETE USING (auth.role() = 'authenticated');
 
 -- ==========================================
 -- TRIGGERS & FUNCTIONS

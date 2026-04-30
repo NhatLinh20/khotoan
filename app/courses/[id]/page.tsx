@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { MOCK_COURSES, getMockLessons, type Course, type Lesson } from '@/lib/mock-data'
+import { getChapters } from '@/lib/math-taxonomy'
 import EnrollButton from './EnrollButton'
 
 function formatPrice(price: number) {
@@ -16,10 +17,15 @@ function formatPrice(price: number) {
 
 export default async function CourseDetailPage({
   params,
+  searchParams
 }: {
   params: Promise<{ id: string }>
+  searchParams: Promise<{ lesson?: string }>
 }) {
   const { id } = await params
+  const resolvedSearchParams = await searchParams
+  const lessonIdParam = resolvedSearchParams.lesson
+
   const supabase = await createClient()
 
   // Fetch user
@@ -63,8 +69,49 @@ export default async function CourseDetailPage({
     isEnrolled = !!enrollment
   }
 
+  // Determine active lesson
+  let activeLesson = null
+  if (isEnrolled && lessons.length > 0) {
+    if (lessonIdParam) {
+      activeLesson = lessons.find(l => l.id === lessonIdParam) || lessons[0]
+    } else {
+      activeLesson = lessons[0]
+    }
+  }
+
+  // Extract video URL
+  let activeVideoUrl = null
+  if (activeLesson && activeLesson.video_url) {
+    let rawUrl = activeLesson.video_url
+    if (rawUrl.includes('<iframe') && rawUrl.includes('src=')) {
+      const match = rawUrl.match(/src=["'](.*?)["']/)
+      if (match && match[1]) rawUrl = match[1]
+    } else if (rawUrl.includes('youtube.com/watch?v=')) {
+      try {
+        const videoId = new URL(rawUrl).searchParams.get('v')
+        if (videoId) rawUrl = `https://www.youtube.com/embed/${videoId}`
+      } catch (e) {}
+    } else if (rawUrl.includes('youtu.be/')) {
+      const videoId = rawUrl.split('youtu.be/')[1].split('?')[0]
+      if (videoId) rawUrl = `https://www.youtube.com/embed/${videoId}`
+    }
+    activeVideoUrl = rawUrl
+  }
+
   const totalDuration = lessons.reduce((sum, l) => sum + (l.duration_minutes || 0), 0)
   const stars = Math.round(course.rating)
+
+  // Group lessons by chapter
+  const gradeCode = course.grade === 10 ? '0' : course.grade === 11 ? '1' : '2'
+  const subjectCode = course.topic === 'D' || course.topic === 'Đại số' ? 'D' : course.topic === 'H' || course.topic === 'Hình học' ? 'H' : 'C'
+  const availableChapters = getChapters(gradeCode, subjectCode)
+  
+  const lessonsByChapter: Record<number, typeof lessons> = {}
+  lessons.forEach(l => {
+    const cid = l.chapter || 0
+    if (!lessonsByChapter[cid]) lessonsByChapter[cid] = []
+    lessonsByChapter[cid].push(l)
+  })
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
@@ -87,9 +134,16 @@ export default async function CourseDetailPage({
             <ArrowLeft size={16} /> Quay lại danh sách
           </Link>
 
-          {/* Thumbnail */}
-          <div className="relative w-full aspect-video rounded-3xl overflow-hidden bg-gradient-to-br from-primary/10 to-primary/20 shadow-xl">
-            {course.thumbnail_url ? (
+          {/* Main Display: Video Player OR Thumbnail */}
+          <div className="relative w-full aspect-video rounded-3xl overflow-hidden bg-slate-900 shadow-xl border border-gray-200 dark:border-slate-800">
+            {activeVideoUrl ? (
+              <iframe
+                src={activeVideoUrl}
+                className="w-full h-full border-0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            ) : course.thumbnail_url ? (
               <Image
                 src={course.thumbnail_url}
                 alt={course.title}
@@ -98,7 +152,7 @@ export default async function CourseDetailPage({
                 className="object-cover"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center">
+              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/20">
                 <BookOpen className="text-primary/30" size={96} />
               </div>
             )}
@@ -121,7 +175,7 @@ export default async function CourseDetailPage({
             </div>
 
             <h1 className="text-3xl font-black text-gray-900 dark:text-white mb-4 leading-tight">
-              {course.title}
+              {activeLesson ? `Đang học: ${activeLesson.title}` : course.title}
             </h1>
 
             {/* Rating row */}
@@ -164,7 +218,7 @@ export default async function CourseDetailPage({
           </div>
 
           {/* Description */}
-          {course.description && (
+          {course.description && !activeLesson && (
             <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-100 dark:border-slate-800 p-8">
               <h2 className="text-xl font-black text-gray-900 dark:text-white mb-4">Mô tả khóa học</h2>
               <p className="text-gray-600 dark:text-gray-400 leading-relaxed font-medium">
@@ -190,94 +244,151 @@ export default async function CourseDetailPage({
             </div>
           )}
 
-          {/* Lessons */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-100 dark:border-slate-800 p-8">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-black text-gray-900 dark:text-white">
-                Nội dung khóa học
-              </h2>
-              <span className="text-sm font-bold text-gray-400">{lessons.length} bài học</span>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              {lessons.map((lesson, index) => (
-                <div
-                  key={lesson.id}
-                  className="flex items-center gap-4 p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/50 hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors group"
-                >
-                  {/* Index */}
-                  <div className="w-8 h-8 rounded-xl bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 flex items-center justify-center text-xs font-black text-gray-500 group-hover:border-primary group-hover:text-primary transition-colors shrink-0">
-                    {String(index + 1).padStart(2, '0')}
-                  </div>
-
-                  {/* Title */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-gray-800 dark:text-gray-200 line-clamp-1 group-hover:text-primary transition-colors">
-                      {lesson.title}
-                    </p>
-                    {lesson.duration_minutes > 0 && (
-                      <p className="text-xs text-gray-400 font-medium flex items-center gap-1 mt-0.5">
-                        <Clock size={11} /> {lesson.duration_minutes} phút
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Media icons */}
-                  <div className="flex items-center gap-2 shrink-0">
-                    {lesson.video_url && (
-                      <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center" title="Có video">
-                        <Video size={14} className="text-blue-500" />
-                      </div>
-                    )}
-                    {lesson.pdf_url && (
-                      <div className="w-7 h-7 rounded-lg bg-red-50 dark:bg-red-900/30 flex items-center justify-center" title="Có tài liệu PDF">
-                        <FileText size={14} className="text-red-500" />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
 
         {/* RIGHT: Sticky sidebar */}
         <div className="lg:col-span-1">
-          <div className="sticky top-24 flex flex-col gap-4">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-100 dark:border-slate-800 p-8 shadow-xl shadow-gray-100 dark:shadow-none">
-              {/* Price */}
-              <div className="mb-6 text-center">
-                <div className={`text-4xl font-black mb-1 ${course.price === 0 ? 'text-emerald-600' : 'text-primary'}`}>
-                  {formatPrice(course.price)}
+          <div className="sticky top-24 flex flex-col gap-4 max-h-[calc(100vh-120px)]">
+            
+            {/* Price & Enroll Card - Only show if NOT enrolled */}
+            {!isEnrolled && (
+              <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-100 dark:border-slate-800 p-8 shadow-xl shadow-gray-100 dark:shadow-none shrink-0">
+                {/* Price */}
+                <div className="mb-6 text-center">
+                  <div className={`text-4xl font-black mb-1 ${course.price === 0 ? 'text-emerald-600' : 'text-primary'}`}>
+                    {formatPrice(course.price)}
+                  </div>
+                  {course.price > 0 && (
+                    <p className="text-sm text-gray-400 font-medium">Thanh toán một lần, học mãi mãi</p>
+                  )}
                 </div>
-                {course.price > 0 && (
-                  <p className="text-sm text-gray-400 font-medium">Thanh toán một lần, học mãi mãi</p>
-                )}
+
+                {/* Enroll Button */}
+                <EnrollButton
+                  courseId={course.id}
+                  isEnrolled={isEnrolled}
+                  isLoggedIn={!!user}
+                  price={course.price}
+                />
+
+                {/* What's included */}
+                <div className="mt-6 pt-6 border-t border-gray-100 dark:border-slate-800 flex flex-col gap-3">
+                  <p className="text-xs uppercase font-black text-gray-400 tracking-widest mb-1">Bao gồm</p>
+                  {[
+                    { icon: <Video size={15} className="text-blue-500" />, label: `${lessons.filter(l => l.video_url).length} bài giảng video` },
+                    { icon: <FileText size={15} className="text-red-500" />, label: `${lessons.filter(l => l.pdf_url).length} tài liệu PDF` },
+                    { icon: <Clock size={15} className="text-emerald-500" />, label: `${totalDuration} phút nội dung` },
+                    { icon: <GraduationCap size={15} className="text-primary" />, label: 'Chứng chỉ hoàn thành' },
+                    { icon: <Users size={15} className="text-secondary" />, label: 'Hỗ trợ giải đáp' },
+                  ].map(({ icon, label }) => (
+                    <div key={label} className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400 font-medium">
+                      {icon}
+                      {label}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Lessons List on Sidebar */}
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-100 dark:border-slate-800 p-6 shadow-xl shadow-gray-100 dark:shadow-none flex flex-col overflow-hidden">
+              <div className="flex items-center justify-between mb-4 shrink-0">
+                <h2 className="text-lg font-black text-gray-900 dark:text-white">
+                  Nội dung khóa học
+                </h2>
+                <span className="text-xs font-bold text-gray-400 bg-gray-100 dark:bg-slate-800 px-2 py-1 rounded-md">{lessons.length} bài</span>
               </div>
 
-              {/* Enroll Button */}
-              <EnrollButton
-                courseId={course.id}
-                isEnrolled={isEnrolled}
-                isLoggedIn={!!user}
-                price={course.price}
-              />
+              <div className="flex flex-col gap-3 overflow-y-auto pr-2 custom-scrollbar">
+                {Object.keys(lessonsByChapter).map((chapterIdStr) => {
+                  const chapterId = Number(chapterIdStr)
+                  const chapterInfo = availableChapters.find(c => c.value === chapterId)
+                  const chapterName = chapterInfo ? `Chương ${chapterInfo.value}: ${chapterInfo.label}` : (chapterId === 0 ? 'Bài học chung' : `Chương ${chapterId}`)
+                  const chapterLessons = lessonsByChapter[chapterId]
+                  
+                  const hasActiveLesson = chapterLessons.some(l => l.id === activeLesson?.id)
 
-              {/* What's included */}
-              <div className="mt-6 pt-6 border-t border-gray-100 dark:border-slate-800 flex flex-col gap-3">
-                <p className="text-xs uppercase font-black text-gray-400 tracking-widest mb-1">Bao gồm</p>
-                {[
-                  { icon: <Video size={15} className="text-blue-500" />, label: `${lessons.filter(l => l.video_url).length} bài giảng video` },
-                  { icon: <FileText size={15} className="text-red-500" />, label: `${lessons.filter(l => l.pdf_url).length} tài liệu PDF` },
-                  { icon: <Clock size={15} className="text-emerald-500" />, label: `${totalDuration} phút nội dung` },
-                  { icon: <GraduationCap size={15} className="text-primary" />, label: 'Chứng chỉ hoàn thành' },
-                  { icon: <Users size={15} className="text-secondary" />, label: 'Hỗ trợ giải đáp' },
-                ].map(({ icon, label }) => (
-                  <div key={label} className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400 font-medium">
-                    {icon}
-                    {label}
-                  </div>
-                ))}
+                  return (
+                    <details 
+                      key={chapterId} 
+                      className="group/chapter bg-gray-50 dark:bg-slate-800/50 rounded-2xl overflow-hidden border border-transparent open:border-gray-200 dark:open:border-slate-700 transition-colors"
+                      open={hasActiveLesson}
+                    >
+                      <summary className="flex items-center justify-between p-4 cursor-pointer select-none outline-none list-none [&::-webkit-details-marker]:hidden hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
+                        <span className="font-bold text-[13px] text-gray-900 dark:text-white line-clamp-1 pr-2">
+                          {chapterName}
+                        </span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-[10px] font-bold text-gray-400 bg-white dark:bg-slate-900 px-1.5 py-0.5 rounded">
+                            {chapterLessons.length} bài
+                          </span>
+                          <ChevronRight size={14} className="text-gray-400 transition-transform group-open/chapter:rotate-90" />
+                        </div>
+                      </summary>
+
+                      <div className="flex flex-col gap-1 p-2 pt-0">
+                        {chapterLessons.map((lesson) => {
+                          const isActive = activeLesson?.id === lesson.id
+                          const LessonWrapper = isEnrolled ? Link : 'div'
+                          const wrapperProps = isEnrolled ? { href: `/courses/${course.id}?lesson=${lesson.id}` } : {}
+                          const globalIndex = lessons.findIndex(l => l.id === lesson.id)
+
+                          return (
+                            <LessonWrapper
+                              key={lesson.id}
+                              {...wrapperProps}
+                              className={`flex items-start gap-3 p-3 rounded-xl transition-colors group ${
+                                isActive
+                                  ? 'bg-primary/10 border-primary/20 border cursor-default'
+                                  : 'hover:bg-white dark:hover:bg-slate-700/50 border border-transparent cursor-pointer'
+                              }`}
+                            >
+                              {/* Index */}
+                              <div className={`w-7 h-7 rounded-lg border flex items-center justify-center text-[10px] font-black shrink-0 transition-colors mt-0.5 ${
+                                isActive 
+                                  ? 'bg-primary border-primary text-white' 
+                                  : 'bg-white dark:bg-slate-800 border-gray-100 dark:border-slate-700 text-gray-500 group-hover:border-primary group-hover:text-primary'
+                              }`}>
+                                {String(globalIndex + 1).padStart(2, '0')}
+                              </div>
+
+                              {/* Title */}
+                              <div className="flex-1 min-w-0">
+                                <p className={`text-[13px] font-bold line-clamp-2 leading-snug transition-colors ${
+                                  isActive ? 'text-primary' : 'text-gray-800 dark:text-gray-200 group-hover:text-primary'
+                                }`}>
+                                  {lesson.title}
+                                </p>
+                                
+                                <div className="flex items-center gap-3 mt-1.5">
+                                  {lesson.duration_minutes > 0 && (
+                                    <p className="text-[10px] text-gray-400 font-bold flex items-center gap-1">
+                                      <Clock size={10} /> {lesson.duration_minutes}p
+                                    </p>
+                                  )}
+                                  <div className="flex items-center gap-1.5">
+                                    {lesson.video_url && <Video size={11} className={isActive ? 'text-primary' : 'text-blue-500'} title="Có video" />}
+                                    {lesson.pdf_url && (
+                                      <div className="relative z-10" title="Có tài liệu PDF">
+                                        {isEnrolled && isActive ? (
+                                          <a href={lesson.pdf_url} target="_blank" rel="noreferrer" className="text-red-500 hover:text-red-600" onClick={e => e.stopPropagation()}>
+                                            <FileText size={11} />
+                                          </a>
+                                        ) : (
+                                          <FileText size={11} className="text-red-500" />
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </LessonWrapper>
+                          )
+                        })}
+                      </div>
+                    </details>
+                  )
+                })}
               </div>
             </div>
 
