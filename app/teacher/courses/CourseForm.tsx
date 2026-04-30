@@ -54,7 +54,7 @@ export default function CourseForm({
 
   // Mapping for taxonomy
   const gradeCode = course.grade === 10 ? '0' : course.grade === 11 ? '1' : '2'
-  const subjectCode = course.topic === 'D' || course.topic === 'Đại số' ? 'D' : course.topic === 'H' || course.topic === 'Hình học' ? 'H' : 'C'
+  const subjectCode = !course.topic ? 'ALL' : (course.topic === 'D' || course.topic === 'Đại số' ? 'D' : course.topic === 'H' || course.topic === 'Hình học' ? 'H' : 'C')
 
   const availableChapters = useMemo(() => getChapters(gradeCode, subjectCode), [gradeCode, subjectCode])
   
@@ -209,9 +209,13 @@ export default function CourseForm({
                 <label className="block text-[11px] font-bold text-gray-700 dark:text-gray-300 mb-1">Cấp 2 - Môn</label>
                 <select
                   value={course.topic}
-                  onChange={e => setCourse({ ...course, topic: e.target.value })}
+                  onChange={e => {
+                    setCourse({ ...course, topic: e.target.value })
+                    setSelectedChapter(0)
+                  }}
                   className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none appearance-none text-[13px]"
                 >
+                  <option value="">Tất cả các môn</option>
                   <option value="D">Đại số & Thống kê</option>
                   <option value="H">Hình học</option>
                   <option value="C">Chuyên đề</option>
@@ -275,7 +279,9 @@ export default function CourseForm({
               >
                 <option value={0}>- Chọn chương -</option>
                 {availableChapters.map(c => (
-                  <option key={c.value} value={c.value}>{c.label}</option>
+                  <option key={c.value} value={c.value}>
+                    {!course.topic ? `[${c.subject}] ${c.label}` : c.label}
+                  </option>
                 ))}
               </select>
             </div>

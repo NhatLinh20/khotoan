@@ -2,34 +2,33 @@ import type { ChapterItem } from '../math-taxonomy'
 const f = (...ls: string[]) => ls.map((label, i) => ({ value: i + 1, label }))
 
 export const H10: ChapterItem[] = [
-  { value: 1, label: 'Chương 4. Hệ thức lượng trong tam giác', lessons: [
-    { value: 1, label: 'Giá trị lượng giác của góc (0°–180°)', forms: f('Xét dấu của biểu thức lượng giác','Tính các giá trị lượng giác','Biến đổi, rút gọn biểu thức lượng giác') },
-    { value: 2, label: 'Định lý sin và định lý côsin', forms: f('Bài toán chỉ dùng định lý Sin, Côsin','Bài toán có dùng công thức diện tích','Biến đổi, rút gọn biểu thức','Nhận dạng tam giác') },
-    { value: 3, label: 'Giải tam giác và ứng dụng thực tế', forms: f('Giải tam giác','Các ứng dụng thực tế') },
+  { value: 4, label: 'Chương 4. Hệ thức lượng trong tam giác', lessons: [
+    { value: 1, label: 'Giá trị lượng giác của một góc từ 0 đến 180', forms: f('Tính giá trị lượng giác của một góc','Tính giá trị của biểu thức lượng giác','Chứng minh các đẳng thức lượng giác','Góc giữa hai véctơ') },
+    { value: 2, label: 'Hệ thức lượng trong tam giác', forms: f('Định lí côsin và định lí sin','Tính các cạnh và các góc của tam giác','Tính diện tích và các bán kính đường tròn ngoại tiếp, nội tiếp','Giải tam giác','Bài toán thực tế áp dụng hệ thức lượng trong tam giác') },
   ]},
-  { value: 2, label: 'Chương 5. Véctơ (chưa xét tọa độ)', lessons: [
-    { value: 1, label: 'Khái niệm véctơ', forms: f('Xác định một véctơ','Xét phương và hướng của các véctơ','Hai véctơ bằng nhau','Hai véctơ đối nhau','Độ dài của một véctơ','Toán thực tế áp dụng véctơ') },
-    { value: 2, label: 'Tổng và hiệu của hai véctơ', forms: f('Tính toán, thu gọn hiệu các véctơ','Tính đúng-sai của 1 đẳng thức véctơ','Tìm điểm nhờ đẳng thức véctơ','Tính độ dài của véctơ tổng, hiệu','Cực trị hình học','Toán thực tế áp dụng tổng hiệu véctơ') },
-    { value: 3, label: 'Tích của một số với véctơ', forms: f('Xác định k.v và độ dài của nó','Biến đổi, thu gọn 1 đẳng thức véctơ','Tìm điểm nhờ đẳng thức véctơ','Sự cùng phương của 2 véctơ và ứng dụng','Phân tích 1 véctơ theo 2 véctơ không cùng phương','Tính độ dài của véctơ tổng, hiệu','Tập hợp điểm','Cực trị hình học','Toán thực tế áp dụng tích 1 số với véctơ') },
-    { value: 4, label: 'Tích vô hướng (chưa xét tọa độ)', forms: f('Tích vô hướng, góc giữa 2 véctơ','Tìm góc nhờ tích vô hướng','Đẳng thức về tích vô hướng hoặc độ dài','Điều kiện vuông góc','Các bài toán tìm điểm và tập hợp điểm','Cực trị và chứng minh bất đẳng thức','Toán thực tế áp dụng tích vô hướng') },
+  { value: 5, label: 'Chương 5. Véctơ', lessons: [
+    { value: 1, label: 'Các khái niệm mở đầu', forms: f('Câu hỏi lý thuyết','Xác định một véctơ, độ dài véctơ','Véctơ cùng phương, véctơ bằng nhau') },
+    { value: 2, label: 'Tổng và hiệu của hai véctơ', forms: f('Câu hỏi lý thuyết','Tính độ dài của tổng, hiệu hai véctơ','Chứng minh đẳng thức véctơ','Xác định điểm thoả mãn đẳng thức véctơ','Bài toán thực tế ứng dụng tổng, hiệu véctơ') },
+    { value: 3, label: 'Tích của một số với một véctơ', forms: f('Câu hỏi lý thuyết','Xác định véctơ ku','Tính độ dài véctơ ku','Chứng minh đẳng thức véctơ','Xác định điểm thoả mãn đẳng thức véctơ','Hai véctơ cùng phương, ba điểm thẳng hàng','Biểu diễn (phân tích) một véctơ qua hai véctơ cho trước','Toán thực tế ứng dụng tích một số với véctơ') },
+    { value: 4, label: 'Tích vô hướng của hai véctơ', forms: f('Câu hỏi lý thuyết','Tính tích vô hướng của hai véctơ','Tính độ dài của véctơ','Tính góc giữa hai véctơ','Chứng minh hai véctơ vuông góc','Chứng minh đẳng thức véctơ','Xác định điểm thoả mãn đẳng thức véctơ','Bài toán cực trị (max, min)','Toán thực tế ứng dụng tích vô hướng') },
   ]},
-  { value: 3, label: 'Chương 9. Phương pháp toạ độ trong mặt phẳng Oxy', lessons: [
-    { value: 1, label: 'Toạ độ của véctơ', forms: f('Tọa độ điểm, độ dài đại số của véctơ trên 1 trục','Phép toán véctơ (tổng, hiệu, tích với số) trong Oxy','Tọa độ điểm và véctơ trên hệ trục Oxy','Sự cùng phương của 2 véctơ và ứng dụng','Phân tích một véctơ theo 2 véctơ không cùng phương','Toán thực tế dùng hệ toạ độ') },
-    { value: 2, label: 'Tích vô hướng (theo tọa độ)', forms: f('Tích vô hướng, góc giữa 2 véctơ','Tìm góc nhờ tích vô hướng','Đẳng thức về tích vô hướng hoặc độ dài','Điều kiện vuông góc','Các bài toán tìm điểm và tập hợp điểm','Cực trị và chứng minh bất đẳng thức','Toán thực tế, liên môn') },
-    { value: 3, label: 'Đường thẳng trong mặt phẳng toạ độ', forms: f('Điểm, véctơ, hệ số góc của đường thẳng','Phương trình đường thẳng','Vị trí tương đối giữa hai đường thẳng','Bài toán về góc giữa hai đường thẳng','Bài toán về khoảng cách','Bài toán tìm điểm','Bài toán dùng cho tam giác, tứ giác','Bài toán thực tế, PP tọa độ hóa','Bài toán có dùng PT chính tắc') },
-    { value: 4, label: 'Đường tròn trong mặt phẳng toạ độ', forms: f('Tìm tâm, bán kính và điều kiện là đường tròn','Phương trình đường tròn','Phương trình tiếp tuyến của đường tròn','Vị trí tương đối liên quan đường tròn','Toán tổng hợp đường thẳng và đường tròn','Bài toán dùng cho tam giác, tứ giác','Bài toán thực tế, PP tọa độ hóa') },
-    { value: 5, label: 'Ba đường conic trong mặt phẳng toạ độ', forms: f('Xác định các yếu tố của elip','Phương trình chính tắc của elip','Bài toán điểm trên elip','Xác định các yếu tố của hypebol','Phương trình chính tắc của hypebol','Bài toán điểm trên hypebol','Xác định các yếu tố của parabol','Phương trình chính tắc của parabol','Bài toán điểm trên parabol') },
+  { value: 9, label: 'Chương 9. Phương pháp tọa độ trong mặt phẳng', lessons: [
+    { value: 1, label: 'Tọa độ của véctơ', forms: f('Tìm tọa độ của véctơ','Tìm tọa độ của điểm','Các phép toán véctơ và ứng dụng (cùng phương, thẳng hàng)','Tích vô hướng và ứng dụng (độ dài, góc, vuông góc)','Bài toán tìm điểm đặc biệt trong tam giác, tứ giác','Toán thực tế ứng dụng tọa độ véctơ') },
+    { value: 2, label: 'Đường thẳng trong mặt phẳng tọa độ', forms: f('Câu hỏi lý thuyết (VTPT, VTCP, PTTQ, PTTS)','Viết phương trình đường thẳng','Vị trí tương đối của hai đường thẳng','Góc giữa hai đường thẳng','Khoảng cách từ điểm đến đường thẳng','Bài toán liên quan đến đối xứng, chiếu vuông góc','Bài toán liên quan đến tam giác, tứ giác, hình hành, ...','Bài toán cực trị (max, min)') },
+    { value: 3, label: 'Đường tròn trong mặt phẳng tọa độ', forms: f('Câu hỏi lý thuyết (tâm, bán kính, nhận dạng PT)','Viết phương trình đường tròn','Vị trí tương đối (đường thẳng & đường tròn, đường tròn & đường tròn)','Phương trình tiếp tuyến của đường tròn','Bài toán liên quan đến tam giác, tứ giác','Bài toán cực trị (max, min)') },
+    { value: 4, label: 'Ba đường conic trong mặt phẳng tọa độ', forms: f('Đường Elip (nhận dạng, tìm các yếu tố)','Viết phương trình Elip','Bài toán liên quan đến điểm thuộc Elip','Đường Hyperbol (nhận dạng, tìm các yếu tố)','Viết phương trình Hyperbol','Đường Parabol (nhận dạng, tìm các yếu tố)','Viết phương trình Parabol','Toán thực tế ứng dụng ba đường conic') },
   ]},
 ]
 
 export const C10: ChapterItem[] = [
   { value: 1, label: 'Chuyên đề 1. Hệ phương trình bậc nhất 3 ẩn', lessons: [
-    { value: 1, label: 'Hệ phương trình bậc nhất 3 ẩn và ứng dụng', forms: f('Các khái niệm về Hệ PT bậc nhất 3 ẩn','Giải Hệ PT bậc nhất 3 ẩn','Toán thực tế ứng dụng Hệ PT bậc nhất 3 ẩn') },
+    { value: 1, label: 'Hệ phương trình bậc nhất 3 ẩn', forms: f('Giải hệ phương trình bằng phương pháp Gauss','Toán thực tế ứng dụng hệ phương trình bậc nhất 3 ẩn') },
   ]},
-  { value: 2, label: 'Chuyên đề 2. Phương pháp quy nạp toán học', lessons: [
-    { value: 1, label: 'Phương pháp quy nạp toán học', forms: f('Quy nạp chứng minh các đẳng thức/công thức/chia hết','Quy nạp chứng minh các bất đẳng thức') },
+  { value: 2, label: 'Chuyên đề 2. Phương pháp quy nạp toán học. Nhị thức Newton', lessons: [
+    { value: 1, label: 'Phương pháp quy nạp toán học', forms: f('Chứng minh đẳng thức','Chứng minh bất đẳng thức','Chứng minh tính chia hết') },
+    { value: 2, label: 'Nhị thức Newton', forms: f('Khai triển nhị thức Newton với số mũ lớn','Tìm hệ số, số hạng trong khai triển','Ứng dụng nhị thức Newton tính tổng') },
   ]},
-  { value: 3, label: 'Chuyên đề 3. Ba đường conic trong mặt phẳng toạ độ', lessons: [
-    { value: 1, label: 'Ba đường conic trong mặt phẳng toạ độ', forms: f('Xác định các yếu tố của elip','Phương trình chính tắc của elip','Bài toán điểm trên elip','Xác định các yếu tố của hypebol','Phương trình chính tắc của hypebol','Bài toán điểm trên hypebol','Xác định các yếu tố của parabol','Phương trình chính tắc của parabol','Bài toán điểm trên parabol') },
+  { value: 3, label: 'Chuyên đề 3. Ba đường Conic và ứng dụng', lessons: [
+    { value: 1, label: 'Ba đường Conic và ứng dụng', forms: f('Các tính chất của Elip, Hyperbol, Parabol','Toán thực tế ứng dụng ba đường Conic') },
   ]},
 ]
