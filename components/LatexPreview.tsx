@@ -19,25 +19,40 @@ export default function LatexPreview({ content, className = '' }: LatexPreviewPr
     // KaTeX does not support eqnarray/eqnarray*, so we convert it to align*
     // We also trim leading whitespace from each line to mimic LaTeX's behavior
     // and prevent unintended indentation in whitespace-pre-wrap mode.
-    let processedContent = content
+    let html = content
       .split('\n')
       .map(line => line.trimStart())
       .join('\n')
+      .replace(/\\allowdisplaybreaks/g, '')
       .replace(/\\begin{eqnarray\*?}/g, '\\begin{align*}')
       .replace(/\\end{eqnarray\*?}/g, '\\end{align*}')
 
     // Clean up excessive newlines around display math blocks to prevent double spacing
-    // when combined with block-level katex-display elements and whitespace-pre-wrap.
     const displayMathRegex = /\\\[|\$\$|\\begin\{(?:equation|align|gather|alignat|CD|eqnarray)\*?\}/g;
     const displayMathEndRegex = /\\\]|\$\$|\\end\{(?:equation|align|gather|alignat|CD|eqnarray)\*?\}/g;
     
-    processedContent = processedContent
+    html = html
       .replace(new RegExp(`\\s*\\n\\s*(${displayMathRegex.source})`, 'g'), '$1')
       .replace(new RegExp(`(${displayMathEndRegex.source})\\s*\\n\\s*`, 'g'), '$1');
 
-    // Safely set text content. We avoid innerHTML to prevent XSS and to keep 
-    // the text nodes intact for auto-render to process.
-    ref.current.textContent = processedContent
+    // 1. Escape HTML special characters before we add our own tags
+    html = html
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+
+    // 2. Handle LaTeX List Environments (itemize, enumerate)
+    html = html
+      .replace(/\\begin\{itemize\}/g, '<ul class="list-disc ml-8 my-2">')
+      .replace(/\\end\{itemize\}/g, '</li></ul>')
+      .replace(/\\begin\{enumerate\}/g, '<ol class="list-decimal ml-8 my-2">')
+      .replace(/\\end\{enumerate\}/g, '</li></ol>')
+      .replace(/\\item\s+/g, '</li><li class="mt-1 pl-1">')
+      // Fix the leading </li> that appears after \begin{...}
+      .replace(/(<(?:ul|ol)[^>]*>)\s*<\/li>/g, '$1');
+
+    // Set the HTML content
+    ref.current.innerHTML = html
     
     renderMathInElement(ref.current, {
       delimiters: [
@@ -103,22 +118,18 @@ export default function LatexPreview({ content, className = '' }: LatexPreviewPr
     })
 
     // Post-processing: Handle LaTeX text-mode line breaks `\\`
-    // We do this AFTER KaTeX rendering to ensure we don't accidentally modify `\\` inside math blocks.
     const walkAndReplace = (node: Node) => {
       if (node.nodeType === Node.TEXT_NODE) {
         if (node.nodeValue) {
-          // Replace `\\` (optionally followed by spaces/tabs/carriage returns and a newline) with a single newline.
-          // This prevents double spacing when Windows `\r\n` is used in the source text.
           node.nodeValue = node.nodeValue
             .replace(/\\\\(?:[ \t\r]*\n)?/g, '\n')
-            .replace(/\\,/g, ' ')       // thin space
-            .replace(/\\ /g, ' ')       // control space
-            .replace(/\\quad/g, '    ') // quad space
-            .replace(/\\qquad/g, '        '); // double quad space
+            .replace(/\\,/g, ' ')       
+            .replace(/\\ /g, ' ')       
+            .replace(/\\quad/g, '    ') 
+            .replace(/\\qquad/g, '        '); 
         }
       } else if (node.nodeType === Node.ELEMENT_NODE) {
         const el = node as Element;
-        // Do not traverse into rendered KaTeX elements
         if (!el.classList.contains('katex')) {
           Array.from(node.childNodes).forEach(walkAndReplace);
         }
@@ -127,6 +138,7 @@ export default function LatexPreview({ content, className = '' }: LatexPreviewPr
     walkAndReplace(ref.current);
 
   }, [content])
+
 
   if (!content.trim()) {
     return (
