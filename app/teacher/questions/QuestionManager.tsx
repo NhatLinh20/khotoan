@@ -100,18 +100,21 @@ function QuestionCard({ q, active, onClick }: { q: Question, active: boolean, on
   )
 }
 
-export default function QuestionManager() {
+export default function QuestionManager({ questions: initialQuestions, initialParams }: { 
+  questions?: Question[], 
+  initialParams?: any 
+}) {
   const supabase = createClient()
-  const [grade, setGrade] = useState('')
-  const [subject, setSubject] = useState('')
-  const [chapter, setChapter] = useState('')
-  const [lesson, setLesson] = useState('')
-  const [form, setForm] = useState('')
-  const [difficulty, setDifficulty] = useState('')
-  const [qType, setQType] = useState('')
-  const [codeSearch, setCodeSearch] = useState('')
+  const [grade, setGrade] = useState(initialParams?.grade ?? '')
+  const [subject, setSubject] = useState(initialParams?.subject ?? '')
+  const [chapter, setChapter] = useState(initialParams?.chapter ?? '')
+  const [lesson, setLesson] = useState(initialParams?.lesson ?? '')
+  const [form, setForm] = useState(initialParams?.form ?? '')
+  const [difficulty, setDifficulty] = useState(initialParams?.difficulty ?? '')
+  const [qType, setQType] = useState(initialParams?.type ?? '')
+  const [codeSearch, setCodeSearch] = useState(initialParams?.code ?? '')
 
-  const [questions, setQuestions] = useState<Question[]>([])
+  const [questions, setQuestions] = useState<Question[]>(initialQuestions ?? [])
   const [loading, setLoading] = useState(false)
   const [currentIndex, setCurrentIndex] = useState(0)
 
@@ -121,14 +124,19 @@ export default function QuestionManager() {
 
   useEffect(() => {
     async function fetchQuestions() {
+      // Avoid re-fetching on first mount if we have initialQuestions
+      if (initialQuestions && !grade && !subject && !chapter && !lesson && !form && !difficulty && !qType && !codeSearch) {
+        return
+      }
+
       setLoading(true)
-      let query = supabase.from('questions').select('*')
+      let query = supabase.from('questions').select('*, question_tf_items(*)')
 
       if (codeSearch) {
         query = query.ilike('question_code', `%${codeSearch}%`)
       } else {
-        if (grade) query = query.eq('grade', grade)
-        if (subject) query = query.eq('subject', subject)
+        if (grade) query = query.eq('grade_code', grade)
+        if (subject) query = query.eq('subject_type', subject)
         if (chapter) query = query.eq('chapter', Number(chapter))
         if (lesson) query = query.eq('lesson', Number(lesson))
         if (form) query = query.eq('form', Number(form))
@@ -141,7 +149,7 @@ export default function QuestionManager() {
       setLoading(false)
     }
     fetchQuestions()
-  }, [grade, subject, chapter, lesson, form, difficulty, qType, codeSearch, supabase])
+  }, [grade, subject, chapter, lesson, form, difficulty, qType, codeSearch, supabase, initialQuestions])
 
   useEffect(() => { setCurrentIndex(0) }, [questions])
 
@@ -328,8 +336,12 @@ export default function QuestionManager() {
                       <LatexPreview content={selectedQ.content} />
                     </div>
                     {selectedQ.image_url && (
-                      <div className="mt-2 relative aspect-video max-h-[300px] rounded-xl overflow-hidden border border-gray-100">
-                        <img src={selectedQ.image_url} alt="Question" className="w-full h-full object-contain" />
+                      <div className="mt-2 flex justify-center">
+                        <img 
+                          src={selectedQ.image_url} 
+                          alt="Question" 
+                          className="max-w-full max-h-[400px] border border-gray-100 dark:border-slate-800" 
+                        />
                       </div>
                     )}
                   </div>

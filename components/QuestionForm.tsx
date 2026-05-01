@@ -2,10 +2,11 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Eye, Save, Loader2, Hash, BookOpen, CheckCircle } from 'lucide-react'
+import { Eye, Save, Loader2, Hash, BookOpen, CheckCircle, Upload, X } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { saveQuestion, updateQuestion } from '@/app/actions/questions'
 import { getChapters, getLessons, getForms } from '@/lib/math-taxonomy'
+import { createClient } from '@/lib/supabase/client'
 
 const LatexPreview = dynamic(() => import('@/components/LatexPreview'), { ssr: false })
 
@@ -128,6 +129,34 @@ export default function QuestionForm({ mode, initialData }: QuestionFormProps) {
   const [qType, setQType] = useState(initialData?.type ?? 'mc')
   const [content, setContent] = useState(initialData?.content ?? '')
   const [imageUrl, setImageUrl] = useState(initialData?.image_url ?? '')
+  const [isUploading, setIsUploading] = useState(false)
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setIsUploading(true)
+    setError(null)
+
+    try {
+      const supabase = createClient()
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
+      const path = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}.${ext}`
+
+      const { data, error: upErr } = await supabase.storage
+        .from('question-images')
+        .upload(path, file)
+
+      if (upErr) throw upErr
+
+      const { data: { publicUrl } } = supabase.storage.from('question-images').getPublicUrl(data.path)
+      setImageUrl(publicUrl)
+    } catch (err: any) {
+      setError('Lỗi tải ảnh: ' + (err.message || 'Không xác định'))
+    } finally {
+      setIsUploading(false)
+    }
+  }
 
   // ── MC ──
   const [optA, setOptA] = useState(initialData?.option_a ?? '')
@@ -316,17 +345,61 @@ export default function QuestionForm({ mode, initialData }: QuestionFormProps) {
           )}
         </div>
 
-        {/* Image URL */}
-        <div>
-          <label className={labelCls}>Hình ảnh (URL, tuỳ chọn)</label>
-          <input
-            name="image_url"
-            type="url"
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-            placeholder="https://..."
-            className={inputCls}
-          />
+        {/* Image URL & Upload */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <label className={labelCls}>Hình ảnh bài toán</label>
+            {imageUrl && (
+              <button
+                type="button"
+                onClick={() => setImageUrl('')}
+                className="text-[10px] font-bold text-red-500 hover:underline flex items-center gap-1"
+              >
+                <X size={10} /> Xóa ảnh
+              </button>
+            )}
+          </div>
+          
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-1">
+              <input
+                name="image_url"
+                type="url"
+                value={imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
+                placeholder="Dán link ảnh (https://...) hoặc tải lên bên cạnh"
+                className={inputCls}
+              />
+            </div>
+            <div className="shrink-0">
+              <label className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-300 cursor-pointer hover:bg-gray-200 dark:hover:bg-slate-700 transition-all">
+                {isUploading ? (
+                  <Loader2 size={16} className="animate-spin text-primary" />
+                ) : (
+                  <Upload size={16} className="text-primary" />
+                )}
+                <span>{isUploading ? 'Đang tải...' : 'Tải ảnh lên'}</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageUpload}
+                  disabled={isUploading}
+                />
+              </label>
+            </div>
+          </div>
+
+          {imageUrl && (
+            <div className="mt-2 flex justify-center">
+              <img 
+                src={imageUrl} 
+                alt="Preview" 
+                className="max-h-64 border border-gray-200 dark:border-slate-700 shadow-sm"
+              />
+            </div>
+          )}
+          <p className="text-[10px] text-gray-400 italic">Hỗ trợ các định dạng: JPG, PNG, GIF, WebP. Dung lượng tối đa 5MB.</p>
         </div>
       </SectionCard>
 
