@@ -95,7 +95,12 @@ export default function LatexPreview({ content, className = '' }: LatexPreviewPr
         if (node.nodeValue) {
           // Replace `\\` (optionally followed by spaces/tabs/carriage returns and a newline) with a single newline.
           // This prevents double spacing when Windows `\r\n` is used in the source text.
-          node.nodeValue = node.nodeValue.replace(/\\\\(?:[ \t\r]*\n)?/g, '\n');
+          node.nodeValue = node.nodeValue
+            .replace(/\\\\(?:[ \t\r]*\n)?/g, '\n')
+            .replace(/\\,/g, ' ')       // thin space
+            .replace(/\\ /g, ' ')       // control space
+            .replace(/\\quad/g, '    ') // quad space
+            .replace(/\\qquad/g, '        '); // double quad space
         }
       } else if (node.nodeType === Node.ELEMENT_NODE) {
         const el = node as Element;
