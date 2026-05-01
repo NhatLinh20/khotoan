@@ -17,9 +17,23 @@ export default function LatexPreview({ content, className = '' }: LatexPreviewPr
     
     // Fix common unsupported LaTeX environments before rendering
     // KaTeX does not support eqnarray/eqnarray*, so we convert it to align*
-    const processedContent = content
+    // We also trim leading whitespace from each line to mimic LaTeX's behavior
+    // and prevent unintended indentation in whitespace-pre-wrap mode.
+    let processedContent = content
+      .split('\n')
+      .map(line => line.trimStart())
+      .join('\n')
       .replace(/\\begin{eqnarray\*?}/g, '\\begin{align*}')
       .replace(/\\end{eqnarray\*?}/g, '\\end{align*}')
+
+    // Clean up excessive newlines around display math blocks to prevent double spacing
+    // when combined with block-level katex-display elements and whitespace-pre-wrap.
+    const displayMathRegex = /\\\[|\$\$|\\begin\{(?:equation|align|gather|alignat|CD|eqnarray)\*?\}/g;
+    const displayMathEndRegex = /\\\]|\$\$|\\end\{(?:equation|align|gather|alignat|CD|eqnarray)\*?\}/g;
+    
+    processedContent = processedContent
+      .replace(new RegExp(`\\s*\\n\\s*(${displayMathRegex.source})`, 'g'), '$1')
+      .replace(new RegExp(`(${displayMathEndRegex.source})\\s*\\n\\s*`, 'g'), '$1');
 
     // Safely set text content. We avoid innerHTML to prevent XSS and to keep 
     // the text nodes intact for auto-render to process.
@@ -125,9 +139,9 @@ export default function LatexPreview({ content, className = '' }: LatexPreviewPr
   return (
     <div
       ref={ref}
-      // whitespace-pre-wrap ensures newlines in the original text are rendered as line breaks,
-      // without needing to insert <br/> which would break the katex parser for multi-line math.
-      className={`text-gray-800 dark:text-gray-200 leading-relaxed text-sm whitespace-pre-wrap ${className}`}
+      // whitespace-pre-wrap ensures newlines in the original text are rendered as line breaks.
+      // We add specific utility classes to override KaTeX display margins to make them more compact.
+      className={`text-gray-800 dark:text-gray-200 leading-relaxed text-sm whitespace-pre-wrap ${className} [&_.katex-display]:my-2 [&_.katex-display]:py-0`}
     />
   )
 }
