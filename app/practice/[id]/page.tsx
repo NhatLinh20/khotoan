@@ -37,7 +37,12 @@ export default async function PracticeExamPage({ params }: { params: Promise<{ i
       `)
       .eq('exam_id', id)
       .order('order_index')
-    questions = data ?? []
+    
+    // Map data to ensure 'questions' is an object, not an array
+    questions = (data ?? []).map((q: any) => ({
+      ...q,
+      questions: Array.isArray(q.questions) ? q.questions[0] : q.questions
+    }))
   } else {
     const { data } = await supabase
       .from('exam_questions')

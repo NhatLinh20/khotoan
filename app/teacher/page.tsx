@@ -18,10 +18,10 @@ export default async function TeacherDashboardPage() {
   ])
 
   const stats = [
-    { label: 'Đề thi đã tạo', value: examCount ?? 0, icon: <FileText size={22} />, color: 'text-primary bg-primary/10' },
-    { label: 'Ngân hàng câu hỏi', value: questionCount ?? 0, icon: <PenLine size={22} />, color: 'text-secondary bg-secondary/10' },
-    { label: 'Học viên', value: '—', icon: <Users size={22} />, color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20' },
-    { label: 'Tỉ lệ hoàn thành', value: '—', icon: <TrendingUp size={22} />, color: 'text-violet-600 bg-violet-50 dark:bg-violet-900/20' },
+    { label: 'Đề thi đã tạo', value: examCount ?? 0, icon: <FileText size={18} />, color: 'text-primary bg-primary/10' },
+    { label: 'Ngân hàng câu hỏi', value: questionCount ?? 0, icon: <PenLine size={18} />, color: 'text-secondary bg-secondary/10' },
+    { label: 'Học viên', value: '—', icon: <Users size={18} />, color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20' },
+    { label: 'Tỉ lệ hoàn thành', value: '—', icon: <TrendingUp size={18} />, color: 'text-violet-600 bg-violet-50 dark:bg-violet-900/20' },
   ]
 
   const quickLinks = [
@@ -50,7 +50,7 @@ export default async function TeacherDashboardPage() {
             className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-4 flex flex-col gap-3"
           >
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${stat.color}`}>
-              {React.cloneElement(stat.icon as React.ReactElement, { size: 18 })}
+              {stat.icon}
             </div>
             <div>
               <div className="text-2xl font-black text-gray-900 dark:text-white">{stat.value}</div>

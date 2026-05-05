@@ -31,12 +31,16 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
     .order('order_index')
 
   // Normalize for bank exams (where correct answers are in the linked questions table)
-  const questions = (rawQuestions ?? []).map(q => ({
-    ...q,
-    correct_answer: q.correct_answer ?? (q.questions as any)?.correct_answer,
-    correct_number: q.correct_number ?? (q.questions as any)?.correct_number,
-    tf_answers: q.tf_answers ?? (q.questions as any)?.question_tf_items,
-  }))
+  const questions = (rawQuestions ?? []).map((q: any) => {
+    const bankQ = Array.isArray(q.questions) ? q.questions[0] : q.questions
+    return {
+      ...q,
+      questions: bankQ,
+      correct_answer: q.correct_answer ?? bankQ?.correct_answer,
+      correct_number: q.correct_number ?? bankQ?.correct_number,
+      tf_answers: q.tf_answers ?? bankQ?.question_tf_items,
+    }
+  })
 
   return (
     <ResultView

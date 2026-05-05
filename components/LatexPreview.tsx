@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+// @ts-expect-error - katex contrib types are not correctly exported
 import renderMathInElement from 'katex/dist/contrib/auto-render'
 import 'katex/dist/katex.min.css'
 
@@ -119,7 +120,7 @@ export default function LatexPreview({ content, className = '' }: LatexPreviewPr
         { left: '\\begin{CD}', right: '\\end{CD}', display: true },
         { left: '\\begin{cases}', right: '\\end{cases}', display: true },
       ],
-      preProcess: (math) => {
+      preProcess: (math: string) => {
         // Fix common typos that break KaTeX
         let processed = math.replace(/\\limits\\limits/g, '\\limits');
 
