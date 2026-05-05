@@ -90,14 +90,14 @@ function AnswerInput({
       { key: 'D', text: opts?.option_d ?? 'D' },
     ]
     return (
-      <div className={`flex ${compact ? 'flex-row gap-2' : 'flex-col gap-2'}`}>
+      <div className={`flex ${compact ? 'flex-row gap-1' : 'flex-col gap-2'}`}>
         {choices.map(c => (
           <button key={c.key} type="button"
             onClick={() => onChange({ ...answer, mc: c.key })}
-            className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-bold transition-all text-left ${answer.mc === c.key
+            className={`flex items-center gap-2 px-3 py-2 border-2 font-bold transition-all text-left ${answer.mc === c.key
               ? 'bg-primary border-primary text-white shadow-md shadow-primary/20'
               : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-200 hover:border-primary/50'
-            } ${compact ? 'flex-col items-center justify-center w-12 h-10 p-1 text-xs' : ''}`}>
+            } ${compact ? 'flex-col items-center justify-center w-9 h-8 rounded-lg text-[11px] px-1' : 'rounded-xl text-sm'}`}>
             {compact ? c.key : (
               <>
                 <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black shrink-0 ${answer.mc === c.key ? 'bg-white/20' : 'bg-gray-100 dark:bg-slate-700'}`}>{c.key}</span>
@@ -246,10 +246,17 @@ export default function PracticeSession({
 
   const currentQ = questions[currentIdx]
 
+  // Auto-scroll to top when question changes in bank mode
+  useEffect(() => {
+    if (exam.exam_type === 'bank') {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }, [currentIdx, exam.exam_type])
+
   // ── PDF Layout ──
   if (exam.exam_type === 'pdf') {
     return (
-      <div className="flex flex-col h-[calc(100vh-64px)] md:h-[calc(100vh-80px)] overflow-hidden">
+      <div className="fixed inset-0 top-16 md:top-20 z-40 flex flex-col md:flex-row overflow-hidden bg-white dark:bg-slate-950">
         {/* Mobile Tabs Header */}
         <div className="md:hidden flex items-center bg-white border-b border-gray-200 dark:bg-slate-900 dark:border-slate-800 shrink-0">
           <button onClick={() => setMobileTab('pdf')} className={`flex-1 py-3 text-sm font-bold border-b-2 transition-colors ${mobileTab === 'pdf' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-gray-500'}`}>Đề thi</button>
@@ -274,25 +281,44 @@ export default function PracticeSession({
           {/* Bottom/Right: Answer Panel */}
           <div className={`w-full md:w-[400px] shrink-0 md:border-l border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex-col overflow-hidden ${mobileTab === 'answers' ? 'flex h-full' : 'hidden md:flex h-full'}`}>
             {/* Header */}
-            <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-800 shrink-0">
-              <h1 className="text-sm font-black text-gray-900 dark:text-white line-clamp-1">{exam.title}</h1>
-              <div className="flex items-center justify-between mt-1">
-                <span className="text-xs text-gray-500">{answeredCount}/{questions.length} câu đã trả lời</span>
-                <span className={`flex items-center gap-1 text-sm font-black tabular-nums ${isWarning ? 'text-red-500' : 'text-primary'}`}>
+            <div className="px-3 py-3 border-b border-gray-100 dark:border-slate-800 shrink-0">
+              <div className="flex items-center justify-between mb-2">
+                <h1 className="text-sm font-black text-gray-900 dark:text-white line-clamp-1 flex-1 pr-2">{exam.title}</h1>
+                <span className={`flex items-center gap-1 text-sm font-black tabular-nums shrink-0 ${isWarning ? 'text-red-500' : 'text-primary'}`}>
                   <Clock size={14} /> {timeDisplay}
                 </span>
               </div>
-            {isWarning && (
-              <div className="flex items-center gap-1.5 mt-2 px-2.5 py-1.5 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                <AlertTriangle size={12} className="text-red-500 shrink-0" />
-                <span className="text-[10px] font-bold text-red-600 dark:text-red-400">Còn dưới 5 phút!</span>
+
+              {/* Question Navigator Grid */}
+              <div className="grid grid-cols-11 gap-1">
+                {questions.map((q, i) => {
+                  const a = answers[q.id]
+                  const answered = q.type === 'mc' ? !!a?.mc
+                    : q.type === 'tf' ? Object.keys(a?.tf ?? {}).length > 0
+                    : q.type === 'short' ? (a?.short ?? '').trim() !== ''
+                    : (a?.essay ?? '').trim() !== ''
+                  return (
+                    <button key={`nav-${q.id}`} type="button" onClick={() => {
+                        document.getElementById(`q-${q.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                      }}
+                      className={`w-full aspect-square flex items-center justify-center rounded text-[10px] font-black transition-all border ${
+                        answered 
+                          ? 'bg-primary border-primary text-white shadow-sm shadow-primary/20' 
+                          : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-500 hover:border-primary/50 hover:text-primary'
+                      }`}>
+                      {i + 1}
+                    </button>
+                  )
+                })}
               </div>
-            )}
-            {/* Progress bar */}
-            <div className="mt-2 h-1.5 bg-gray-100 dark:bg-slate-800 rounded-full overflow-hidden">
-              <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${(answeredCount / Math.max(questions.length, 1)) * 100}%` }} />
+
+              {isWarning && (
+                <div className="flex items-center gap-1.5 mt-2 px-2.5 py-1.5 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                  <AlertTriangle size={12} className="text-red-500 shrink-0" />
+                  <span className="text-[10px] font-bold text-red-600 dark:text-red-400">Còn dưới 5 phút!</span>
+                </div>
+              )}
             </div>
-          </div>
 
           {/* Questions list */}
           <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
@@ -303,15 +329,32 @@ export default function PracticeSession({
                 : q.type === 'short' ? (a.short ?? '').trim() !== ''
                 : (a.essay ?? '').trim() !== ''
               return (
-                <div key={q.id} className={`p-3 rounded-xl border-2 transition-all ${answered ? 'border-primary/30 bg-primary/5' : 'border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900'}`}>
-                  <p className="text-xs font-black text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-2">
-                    <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black ${answered ? 'bg-primary text-white' : 'bg-gray-100 dark:bg-slate-800 text-gray-500'}`}>
-                      {i + 1}
-                    </span>
-                    <span className="uppercase tracking-wider text-[9px]">{q.type === 'mc' ? 'Trắc nghiệm' : q.type === 'tf' ? 'Đúng/Sai' : q.type === 'short' ? 'Trả lời ngắn' : 'Tự luận'}</span>
-                    {answered && <CheckCircle2 size={12} className="text-primary ml-auto" />}
-                  </p>
-                  <AnswerInput question={q} answer={a} onChange={na => updateAnswer(q.id, na)} compact />
+                <div id={`q-${q.id}`} key={q.id} className={`p-3 rounded-xl border-2 transition-all ${answered ? 'border-primary/30 bg-primary/5' : 'border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900'} ${q.type === 'mc' ? 'flex items-center' : ''}`}>
+                  {q.type === 'mc' ? (
+                    <div className="flex w-full items-center justify-between">
+                      <div className="flex items-center gap-2 shrink-0 min-w-0">
+                        <span className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-black shrink-0 ${answered ? 'bg-primary text-white shadow-md shadow-primary/20' : 'bg-gray-100 dark:bg-slate-800 text-gray-500'}`}>
+                          {i + 1}
+                        </span>
+                        <span className="uppercase tracking-wider text-[8px] font-black text-gray-400 truncate">Trắc nghiệm</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0 ml-1">
+                        <AnswerInput question={q} answer={a} onChange={na => updateAnswer(q.id, na)} compact />
+                        {answered && <CheckCircle2 size={14} className="text-primary shrink-0" />}
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-xs font-black text-gray-600 dark:text-gray-400 mb-3 flex items-center gap-2">
+                        <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black ${answered ? 'bg-primary text-white shadow-md shadow-primary/20' : 'bg-gray-100 dark:bg-slate-800 text-gray-500'}`}>
+                          {i + 1}
+                        </span>
+                        <span className="uppercase tracking-wider text-[9px]">{q.type === 'tf' ? 'Đúng/Sai' : q.type === 'short' ? 'Trả lời ngắn' : 'Tự luận'}</span>
+                        {answered && <CheckCircle2 size={14} className="text-primary ml-auto" />}
+                      </p>
+                      <AnswerInput question={q} answer={a} onChange={na => updateAnswer(q.id, na)} compact />
+                    </>
+                  )}
                 </div>
               )
             })}
@@ -352,14 +395,49 @@ export default function PracticeSession({
     <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
       {/* Fixed Header */}
       <div className="fixed top-20 left-0 right-0 z-40 bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center gap-4">
-          <div className="flex-1 min-w-0">
-            <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Đang làm bài</p>
-            <h1 className="text-sm font-black text-gray-900 dark:text-white truncate">{exam.title}</h1>
+        <div className="max-w-6xl mx-auto px-3 py-2 flex flex-col xl:flex-row xl:items-center gap-2 xl:gap-4">
+          <div className="flex items-center justify-between xl:w-64 shrink-0 min-w-0">
+            <div className="flex-1 min-w-0 pr-2">
+              <h1 className="text-xs xl:text-sm font-black text-gray-900 dark:text-white truncate">{exam.title}</h1>
+              <p className="text-[9px] xl:text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">Đang làm bài</p>
+            </div>
+            
+            {/* Timer on Mobile */}
+            <div className="xl:hidden flex items-center gap-2 shrink-0">
+              <span className="text-[10px] text-gray-500 font-medium">{answeredCount}/{questions.length}</span>
+              <span className={`flex items-center gap-1 text-xs font-black tabular-nums px-2 py-1 rounded-lg ${isWarning ? 'text-red-600 bg-red-50 dark:bg-red-900/20' : 'text-primary bg-primary/10'}`}>
+                <Clock size={12} /> {timeDisplay}
+              </span>
+            </div>
           </div>
-          <div className="flex items-center gap-3 shrink-0">
+          
+          <div className="flex-1 w-full flex justify-center">
+            <div className="grid grid-cols-[repeat(11,minmax(0,1fr))] lg:grid-cols-[repeat(22,minmax(0,1fr))] gap-0.5 md:gap-1 w-full max-w-3xl">
+              {questions.map((q, i) => {
+                const a = answers[q.id]
+                const answered = q.type === 'mc' ? !!a?.mc
+                  : q.type === 'tf' ? Object.keys(a?.tf ?? {}).length > 0
+                  : q.type === 'short' ? (a?.short ?? '').trim() !== ''
+                  : (a?.essay ?? '').trim() !== ''
+                return (
+                  <button key={`top-${q.id}`} onClick={() => setCurrentIdx(i)}
+                    className={`w-full aspect-square max-h-7 md:max-h-8 flex items-center justify-center rounded text-[9px] md:text-xs font-black transition-all ${i === currentIdx
+                      ? 'ring-2 ring-primary ring-offset-2 bg-primary text-white'
+                      : answered
+                      ? 'bg-primary/15 text-primary'
+                      : 'bg-gray-100 dark:bg-slate-800 text-gray-500 hover:bg-gray-200 dark:hover:bg-slate-700'
+                    }`}>
+                    {i + 1}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Timer on Desktop */}
+          <div className="hidden xl:flex items-center justify-end gap-3 shrink-0">
             <span className="text-xs text-gray-500 font-medium">{answeredCount}/{questions.length} câu</span>
-            <span className={`flex items-center gap-1.5 text-base font-black tabular-nums px-3 py-1.5 rounded-xl ${isWarning ? 'text-red-600 bg-red-50 dark:bg-red-900/20' : 'text-primary bg-primary/10'}`}>
+            <span className={`flex items-center gap-1.5 text-sm md:text-base font-black tabular-nums px-3 py-1.5 rounded-xl ${isWarning ? 'text-red-600 bg-red-50 dark:bg-red-900/20' : 'text-primary bg-primary/10'}`}>
               <Clock size={15} /> {timeDisplay}
             </span>
           </div>
@@ -377,31 +455,7 @@ export default function PracticeSession({
       </div>
 
       {/* Body */}
-      <div className="max-w-4xl mx-auto px-4 pt-36 pb-8 space-y-6">
-        {/* Question Number Navigator */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-4">
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-3">Danh sách câu hỏi</p>
-          <div className="flex flex-wrap gap-2">
-            {questions.map((q, i) => {
-              const a = answers[q.id]
-              const answered = q.type === 'mc' ? !!a?.mc
-                : q.type === 'tf' ? Object.keys(a?.tf ?? {}).length > 0
-                : q.type === 'short' ? (a?.short ?? '').trim() !== ''
-                : (a?.essay ?? '').trim() !== ''
-              return (
-                <button key={q.id} onClick={() => setCurrentIdx(i)}
-                  className={`w-9 h-9 rounded-lg text-xs font-black transition-all ${i === currentIdx
-                    ? 'ring-2 ring-primary ring-offset-2 bg-primary text-white'
-                    : answered
-                    ? 'bg-primary/15 text-primary'
-                    : 'bg-gray-100 dark:bg-slate-800 text-gray-500 hover:bg-gray-200 dark:hover:bg-slate-700'
-                  }`}>
-                  {i + 1}
-                </button>
-              )
-            })}
-          </div>
-        </div>
+      <div className="max-w-4xl mx-auto px-4 pt-32 md:pt-28 pb-8 space-y-6">
 
         {/* Current Question */}
         {currentQ && (
