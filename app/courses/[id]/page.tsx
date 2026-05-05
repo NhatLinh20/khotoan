@@ -9,6 +9,7 @@ import { createClient } from '@/lib/supabase/server'
 import { MOCK_COURSES, getMockLessons, type Course, type Lesson } from '@/lib/mock-data'
 import { getChapters } from '@/lib/math-taxonomy'
 import EnrollButton from './EnrollButton'
+import CourseContentAccordion, { type LessonGroup } from './CourseContentAccordion'
 
 function formatPrice(price: number) {
   if (price === 0) return 'Miễn phí'
@@ -101,22 +102,54 @@ export default async function CourseDetailPage({
   const totalDuration = lessons.reduce((sum, l) => sum + (l.duration_minutes || 0), 0)
   const stars = Math.round(course.rating)
 
-  // Group lessons by chapter
+  // Build chapter groups for accordion
   const gradeCode = course.grade === 10 ? '0' : course.grade === 11 ? '1' : course.grade === 12 ? '2' : String(course.grade)
   const topic = course.topic
   let subjectCode: 'D' | 'H' | 'C' | 'ALL' = 'ALL'
   if (topic === 'D' || topic === 'Đại số' || topic === 'Đại số & Thống kê') subjectCode = 'D'
   else if (topic === 'H' || topic === 'Hình học') subjectCode = 'H'
   else if (topic === 'C' || topic === 'Chuyên đề') subjectCode = 'C'
-  
   const availableChapters = getChapters(gradeCode, subjectCode)
-  
-  const lessonsByChapter: Record<number, typeof lessons> = {}
-  lessons.forEach(l => {
-    const cid = l.chapter || 0
-    if (!lessonsByChapter[cid]) lessonsByChapter[cid] = []
-    lessonsByChapter[cid].push(l)
-  })
+
+  // Group lessons by chapter field; fall back to group-of-10 if no chapter data
+  const hasChapterData = lessons.some(l => !!(l as any).chapter)
+  const groupMap = new Map<string, typeof lessons>()
+
+  if (hasChapterData) {
+    lessons.forEach(l => {
+      const cid: number = (l as any).chapter ?? 0
+      const chInfo = availableChapters.find(c => c.value === cid)
+      const key = chInfo
+        ? `Chương ${chInfo.value}: ${chInfo.label}`
+        : cid === 0 ? 'Bài học chung' : `Chương ${cid}`
+      if (!groupMap.has(key)) groupMap.set(key, [])
+      groupMap.get(key)!.push(l)
+    })
+  } else {
+    // fallback: group by 10
+    const sorted = [...lessons].sort((a, b) => ((a as any).order_index || 0) - ((b as any).order_index || 0))
+    for (let i = 0; i < sorted.length; i += 10) {
+      const key = `Chương ${Math.floor(i / 10) + 1}`
+      groupMap.set(key, sorted.slice(i, i + 10))
+    }
+  }
+
+  const lessonGroups: LessonGroup[] = Array.from(groupMap.entries()).map(([chapterName, ls]) => ({
+    chapterName,
+    lessons: ls.map(l => ({
+      id: l.id,
+      title: l.title,
+      video_url: l.video_url,
+      pdf_url: l.pdf_url,
+      duration_minutes: l.duration_minutes || 0,
+      globalIndex: lessons.findIndex(x => x.id === l.id),
+    })),
+  }))
+
+  // Which group contains the active lesson (to open by default)
+  const initialOpenIndex = activeLesson
+    ? lessonGroups.findIndex(g => g.lessons.some(l => l.id === activeLesson.id))
+    : -1
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
@@ -306,97 +339,13 @@ export default async function CourseDetailPage({
                 <span className="text-xs font-bold text-gray-400 bg-gray-100 dark:bg-slate-800 px-2 py-1 rounded-md">{lessons.length} bài</span>
               </div>
 
-              <div className="flex flex-col gap-3 overflow-y-auto pr-2 custom-scrollbar">
-                {Object.keys(lessonsByChapter).map((chapterIdStr) => {
-                  const chapterId = Number(chapterIdStr)
-                  const chapterInfo = availableChapters.find(c => c.value === chapterId)
-                  const chapterName = chapterInfo ? `Chương ${chapterInfo.value}: ${chapterInfo.label}` : (chapterId === 0 ? 'Bài học chung' : `Chương ${chapterId}`)
-                  const chapterLessons = lessonsByChapter[chapterId]
-                  
-                  const hasActiveLesson = chapterLessons.some(l => l.id === activeLesson?.id)
-
-                  return (
-                    <details 
-                      key={chapterId} 
-                      className="group/chapter bg-gray-50 dark:bg-slate-800/50 rounded-2xl overflow-hidden border border-transparent open:border-gray-200 dark:open:border-slate-700 transition-colors"
-                      open={hasActiveLesson}
-                    >
-                      <summary className="flex items-center justify-between p-4 cursor-pointer select-none outline-none list-none [&::-webkit-details-marker]:hidden hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
-                        <span className="font-bold text-[13px] text-gray-900 dark:text-white line-clamp-1 pr-2">
-                          {chapterName}
-                        </span>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <span className="text-[10px] font-bold text-gray-400 bg-white dark:bg-slate-900 px-1.5 py-0.5 rounded">
-                            {chapterLessons.length} bài
-                          </span>
-                          <ChevronRight size={14} className="text-gray-400 transition-transform group-open/chapter:rotate-90" />
-                        </div>
-                      </summary>
-
-                      <div className="flex flex-col gap-1 p-2 pt-0">
-                        {chapterLessons.map((lesson) => {
-                          const isActive = activeLesson?.id === lesson.id
-                          const LessonWrapper = isEnrolled ? Link : 'div'
-                          const wrapperProps = isEnrolled ? { href: `/courses/${course.id}?lesson=${lesson.id}` } : {}
-                          const globalIndex = lessons.findIndex(l => l.id === lesson.id)
-
-                          return (
-                            <LessonWrapper
-                              key={lesson.id}
-                              {...wrapperProps}
-                              className={`flex items-start gap-3 p-3 rounded-xl transition-colors group ${
-                                isActive
-                                  ? 'bg-primary/10 border-primary/20 border cursor-default'
-                                  : 'hover:bg-white dark:hover:bg-slate-700/50 border border-transparent cursor-pointer'
-                              }`}
-                            >
-                              {/* Index */}
-                              <div className={`w-7 h-7 rounded-lg border flex items-center justify-center text-[10px] font-black shrink-0 transition-colors mt-0.5 ${
-                                isActive 
-                                  ? 'bg-primary border-primary text-white' 
-                                  : 'bg-white dark:bg-slate-800 border-gray-100 dark:border-slate-700 text-gray-500 group-hover:border-primary group-hover:text-primary'
-                              }`}>
-                                {String(globalIndex + 1).padStart(2, '0')}
-                              </div>
-
-                              {/* Title */}
-                              <div className="flex-1 min-w-0">
-                                <p className={`text-[13px] font-bold line-clamp-2 leading-snug transition-colors ${
-                                  isActive ? 'text-primary' : 'text-gray-800 dark:text-gray-200 group-hover:text-primary'
-                                }`}>
-                                  {lesson.title}
-                                </p>
-                                
-                                <div className="flex items-center gap-3 mt-1.5">
-                                  {lesson.duration_minutes > 0 && (
-                                    <p className="text-[10px] text-gray-400 font-bold flex items-center gap-1">
-                                      <Clock size={10} /> {lesson.duration_minutes}p
-                                    </p>
-                                  )}
-                                  <div className="flex items-center gap-1.5">
-                                    {lesson.video_url && <Video size={11} className={isActive ? 'text-primary' : 'text-blue-500'} title="Có video" />}
-                                    {lesson.pdf_url && (
-                                      <div className="relative z-10" title="Có tài liệu PDF">
-                                        {isEnrolled && isActive ? (
-                                          <a href={lesson.pdf_url} target="_blank" rel="noreferrer" className="text-red-500 hover:text-red-600" onClick={e => e.stopPropagation()}>
-                                            <FileText size={11} />
-                                          </a>
-                                        ) : (
-                                          <FileText size={11} className="text-red-500" />
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            </LessonWrapper>
-                          )
-                        })}
-                      </div>
-                    </details>
-                  )
-                })}
-              </div>
+              <CourseContentAccordion
+                groups={lessonGroups}
+                activeLessonId={activeLesson?.id}
+                isEnrolled={isEnrolled}
+                courseId={course.id}
+                initialOpenIndex={initialOpenIndex}
+              />
             </div>
 
             {/* Back to list */}

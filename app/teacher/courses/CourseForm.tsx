@@ -1,11 +1,94 @@
 'use client'
 
-import { useState, useTransition, useMemo } from 'react'
+import { useState, useTransition, useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Trash2, ArrowLeft, GripVertical, Loader2 } from 'lucide-react'
+import { Plus, Trash2, ArrowLeft, GripVertical, Loader2, X } from 'lucide-react'
 import Link from 'next/link'
 import { saveCourse } from '@/app/actions/courses'
 import { getChapters, getLessons } from '@/lib/math-taxonomy'
+
+// ── PDF multi-entry helpers ──────────────────────────────────────────
+type PdfEntry = { label: string; url: string }
+
+function parsePdfEntries(raw: string): PdfEntry[] {
+  if (!raw) return [{ label: '', url: '' }]
+  const entries = raw.split('\n').map(s => s.trim()).filter(Boolean).map(line => {
+    const sep = line.indexOf('|')
+    if (sep > 0) return { label: line.slice(0, sep).trim(), url: line.slice(sep + 1).trim() }
+    return { label: '', url: line }
+  })
+  return entries.length > 0 ? entries : [{ label: '', url: '' }]
+}
+
+function serializePdfEntries(entries: PdfEntry[]): string {
+  return entries.filter(e => e.url.trim()).map(e => {
+    const label = e.label.trim()
+    const url = e.url.trim()
+    return label ? `${label} | ${url}` : url
+  }).join('\n')
+}
+
+function PdfUrlsEditor({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [entries, setEntries] = useState<PdfEntry[]>(() => parsePdfEntries(value))
+
+  const update = useCallback((next: PdfEntry[]) => {
+    setEntries(next)
+    onChange(serializePdfEntries(next))
+  }, [onChange])
+
+  const handleChange = (i: number, field: keyof PdfEntry, val: string) => {
+    const next = entries.map((e, idx) => idx === i ? { ...e, [field]: val } : e)
+    update(next)
+  }
+
+  const handleAdd = () => update([...entries, { label: '', url: '' }])
+
+  const handleRemove = (i: number) => {
+    const next = entries.filter((_, idx) => idx !== i)
+    update(next.length > 0 ? next : [{ label: '', url: '' }])
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      {entries.map((entry, i) => (
+        <div key={i} className="flex gap-1 items-start">
+          <div className="flex flex-col gap-1 flex-1">
+            <input
+              type="text"
+              value={entry.label}
+              onChange={e => handleChange(i, 'label', e.target.value)}
+              className="w-full px-2 py-1 rounded border border-gray-200 dark:border-slate-700 bg-transparent text-gray-900 dark:text-white outline-none focus:border-primary text-[10px] placeholder:text-gray-400"
+              placeholder="Tên file (vd: Bài học)"
+            />
+            <input
+              type="text"
+              value={entry.url}
+              onChange={e => handleChange(i, 'url', e.target.value)}
+              className="w-full px-2 py-1 rounded border border-gray-200 dark:border-slate-700 bg-transparent text-gray-900 dark:text-white outline-none focus:border-primary text-[10px] placeholder:text-gray-400"
+              placeholder="Link Drive..."
+            />
+          </div>
+          {entries.length > 1 && (
+            <button
+              type="button"
+              onClick={() => handleRemove(i)}
+              className="mt-1 p-1 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors shrink-0"
+            >
+              <X size={12} />
+            </button>
+          )}
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={handleAdd}
+        className="flex items-center gap-1 text-[10px] font-bold text-primary hover:text-primary/80 transition-colors mt-0.5"
+      >
+        <Plus size={11} /> Thêm file PDF
+      </button>
+    </div>
+  )
+}
 
 type LessonInput = {
   _tempId?: string
@@ -313,7 +396,9 @@ export default function CourseForm({
                     <th className="px-3 py-3 text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase w-8">#</th>
                     <th className="px-3 py-3 text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase min-w-[250px]">Cấp 4 - Bài § và Tên bài</th>
                     <th className="px-3 py-3 text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase w-[150px]">Video URL</th>
-                    <th className="px-3 py-3 text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase w-[150px]">PDF URL</th>
+                    <th className="px-3 py-3 text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase w-[180px]">File PDF
+                      <span className="block text-[9px] font-medium text-gray-400 normal-case tracking-normal">Tên hiển thị + Link</span>
+                    </th>
                     <th className="px-3 py-3 text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase w-[70px] text-center">Phút</th>
                     <th className="px-3 py-3 w-12 text-center">Xóa</th>
                   </tr>
@@ -344,13 +429,10 @@ export default function CourseForm({
                           placeholder="Link YouTube..."
                         />
                       </td>
-                      <td className="px-3 py-2">
-                        <input
-                          type="text"
+                      <td className="px-3 py-2 align-top">
+                        <PdfUrlsEditor
                           value={lesson.pdf_url}
-                          onChange={e => handleLessonChange(lesson._tempId!, 'pdf_url', e.target.value)}
-                          className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-transparent text-gray-900 dark:text-white outline-none focus:border-primary"
-                          placeholder="Link Drive..."
+                          onChange={v => handleLessonChange(lesson._tempId!, 'pdf_url', v)}
                         />
                       </td>
                       <td className="px-3 py-2">
