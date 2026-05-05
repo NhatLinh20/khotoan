@@ -114,31 +114,47 @@ function AnswerInput({
     const labels = ['a', 'b', 'c', 'd']
     const tfMap = answer.tf ?? {}
     return (
-      <div className={`${compact ? 'flex gap-2 items-center' : 'space-y-2'}`}>
+      <div className={`${compact ? 'flex items-center justify-around w-full px-2' : 'space-y-2'}`}>
         {labels.map(label => {
           const item = opts?.question_tf_items?.find(i => i.label === label)
+          const val = tfMap[label]
+          
+          if (compact) {
+            return (
+              <div key={label} className="flex flex-col items-center gap-1.5">
+                <span className="text-[12px] font-black text-gray-500">{label}</span>
+                <button type="button" 
+                  onClick={() => {
+                    const newVal = val === undefined ? true : val === true ? false : true
+                    onChange({ ...answer, tf: { ...tfMap, [label]: newVal } })
+                  }}
+                  className={`w-10 h-8 rounded-lg text-xs font-black transition-all border-2 ${
+                    val === true ? 'bg-emerald-500 text-white border-emerald-500 shadow-md shadow-emerald-500/20' : 
+                    val === false ? 'bg-red-50 dark:bg-red-900/20 text-red-500 border-red-200 dark:border-red-800' : 
+                    'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-300 hover:border-gray-300'
+                  }`}>
+                  {val === true ? 'Đ' : val === false ? 'S' : '-'}
+                </button>
+              </div>
+            )
+          }
+
           return (
-          <div key={label} className={`flex items-center gap-2 ${compact ? '' : 'p-2 rounded-xl bg-gray-50 dark:bg-slate-800'}`}>
-            {!compact && <span className="text-xs font-black text-gray-500 w-4 shrink-0">{label.toUpperCase()}.</span>}
-            {!compact && item && (
+          <div key={label} className={`flex items-center gap-2 p-2 rounded-xl bg-gray-50 dark:bg-slate-800`}>
+            <span className={`text-xs font-black text-gray-500 shrink-0 w-4`}>{label}.</span>
+            {item && (
               <div className="flex-1 text-sm font-bold overflow-hidden"><LatexPreview content={item.content} /></div>
             )}
-            <button type="button" onClick={() => onChange({ ...answer, tf: { ...tfMap, [label]: true } })}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold border-2 transition-all shrink-0 ${tfMap[label] === true ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white dark:bg-slate-700 border-gray-200 dark:border-slate-600 text-gray-600 hover:border-emerald-400'}`}>
-              {compact ? label.toUpperCase() : 'Đúng'}
-            </button>
-            {!compact && (
+            <div className={`flex items-center gap-1`}>
+              <button type="button" onClick={() => onChange({ ...answer, tf: { ...tfMap, [label]: true } })}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold border-2 transition-all shrink-0 ${tfMap[label] === true ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white dark:bg-slate-700 border-gray-200 dark:border-slate-600 text-gray-600 hover:border-emerald-400'}`}>
+                Đúng
+              </button>
               <button type="button" onClick={() => onChange({ ...answer, tf: { ...tfMap, [label]: false } })}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold border-2 transition-all ${tfMap[label] === false ? 'bg-red-500 text-white border-red-500' : 'bg-white dark:bg-slate-700 border-gray-200 dark:border-slate-600 text-gray-600 hover:border-red-400'}`}>
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold border-2 transition-all shrink-0 ${tfMap[label] === false ? 'bg-red-500 text-white border-red-500' : 'bg-white dark:bg-slate-700 border-gray-200 dark:border-slate-600 text-gray-600 hover:border-red-400'}`}>
                 Sai
               </button>
-            )}
-            {compact && (
-              <button type="button" onClick={() => onChange({ ...answer, tf: { ...tfMap, [label]: false } })}
-                className={`px-2 py-1 rounded-lg text-[10px] font-bold border-2 transition-all ${tfMap[label] === false ? 'bg-red-500 text-white border-red-500' : 'bg-white dark:bg-slate-700 border-gray-200 text-gray-600'}`}>
-                S
-              </button>
-            )}
+            </div>
           </div>
         )})}
       </div>
@@ -194,6 +210,7 @@ export default function PracticeSession({
   const [currentIdx, setCurrentIdx] = useState(0)
   const [showConfirm, setShowConfirm] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [mobileTab, setMobileTab] = useState<'pdf' | 'answers'>('pdf')
 
   // Persist answers
   useEffect(() => {
@@ -232,27 +249,39 @@ export default function PracticeSession({
   // ── PDF Layout ──
   if (exam.exam_type === 'pdf') {
     return (
-      <div className="flex h-[calc(100vh-80px)] overflow-hidden">
-        {/* Left: PDF */}
-        <div className="flex-1 overflow-hidden">
-          <iframe
-            src={exam.pdf_url ?? ''}
-            className="w-full h-full border-0"
-            title="Đề thi PDF"
-          />
+      <div className="flex flex-col h-[calc(100vh-64px)] md:h-[calc(100vh-80px)] overflow-hidden">
+        {/* Mobile Tabs Header */}
+        <div className="md:hidden flex items-center bg-white border-b border-gray-200 dark:bg-slate-900 dark:border-slate-800 shrink-0">
+          <button onClick={() => setMobileTab('pdf')} className={`flex-1 py-3 text-sm font-bold border-b-2 transition-colors ${mobileTab === 'pdf' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-gray-500'}`}>Đề thi</button>
+          <button onClick={() => setMobileTab('answers')} className={`flex-1 py-3 text-sm font-bold border-b-2 transition-colors flex justify-center items-center gap-2 ${mobileTab === 'answers' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-gray-500'}`}>
+            Phiếu trả lời 
+            <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${mobileTab === 'answers' ? 'bg-primary/20 text-primary' : 'bg-gray-100 dark:bg-slate-800 text-gray-500'}`}>
+              {answeredCount}/{questions.length}
+            </span>
+          </button>
         </div>
 
-        {/* Right: Answer Panel */}
-        <div className="w-96 shrink-0 border-l border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col h-full overflow-hidden">
-          {/* Header */}
-          <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-800 shrink-0">
-            <h1 className="text-sm font-black text-gray-900 dark:text-white line-clamp-1">{exam.title}</h1>
-            <div className="flex items-center justify-between mt-1">
-              <span className="text-xs text-gray-500">{answeredCount}/{questions.length} câu đã trả lời</span>
-              <span className={`flex items-center gap-1 text-sm font-black tabular-nums ${isWarning ? 'text-red-500' : 'text-primary'}`}>
-                <Clock size={14} /> {timeDisplay}
-              </span>
-            </div>
+        <div className="flex flex-1 overflow-hidden flex-col md:flex-row">
+          {/* Top/Left: PDF */}
+          <div className={`flex-1 overflow-hidden bg-gray-50 dark:bg-slate-950 ${mobileTab === 'pdf' ? 'block' : 'hidden md:block'}`}>
+            <iframe
+              src={exam.pdf_url ?? ''}
+              className="w-full h-full border-0"
+              title="Đề thi PDF"
+            />
+          </div>
+
+          {/* Bottom/Right: Answer Panel */}
+          <div className={`w-full md:w-[400px] shrink-0 md:border-l border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex-col overflow-hidden ${mobileTab === 'answers' ? 'flex h-full' : 'hidden md:flex h-full'}`}>
+            {/* Header */}
+            <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-800 shrink-0">
+              <h1 className="text-sm font-black text-gray-900 dark:text-white line-clamp-1">{exam.title}</h1>
+              <div className="flex items-center justify-between mt-1">
+                <span className="text-xs text-gray-500">{answeredCount}/{questions.length} câu đã trả lời</span>
+                <span className={`flex items-center gap-1 text-sm font-black tabular-nums ${isWarning ? 'text-red-500' : 'text-primary'}`}>
+                  <Clock size={14} /> {timeDisplay}
+                </span>
+              </div>
             {isWarning && (
               <div className="flex items-center gap-1.5 mt-2 px-2.5 py-1.5 bg-red-50 dark:bg-red-900/20 rounded-lg">
                 <AlertTriangle size={12} className="text-red-500 shrink-0" />
@@ -294,6 +323,7 @@ export default function PracticeSession({
               className="w-full inline-flex items-center justify-center gap-2 py-2.5 bg-primary text-white rounded-xl font-bold text-sm hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 disabled:opacity-50">
               <Send size={15} /> Nộp bài
             </button>
+          </div>
           </div>
         </div>
 
