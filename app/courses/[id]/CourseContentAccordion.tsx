@@ -140,7 +140,7 @@ export default function CourseContentAccordion({
             : 'bg-slate-800/50 border-slate-700'
         }`}>
           {/* Multiple PDF links */}
-          {parsePdfUrls(activeLesson.pdf_url).length > 0 && (
+          {isEnrolled && parsePdfUrls(activeLesson.pdf_url).length > 0 && (
             <div className="mt-1.5 flex flex-col gap-1">
               {parsePdfUrls(activeLesson.pdf_url).map((pdf, i) => (
                 <a
@@ -194,10 +194,16 @@ export default function CourseContentAccordion({
               <span className="text-[12px] font-medium line-clamp-1 flex-1">{lesson.title}</span>
               <div className="flex items-center gap-1.5 shrink-0" onClick={e => e.stopPropagation()}>
                 {lesson.video_url && (
-                  <a href={lesson.video_url} target="_blank" rel="noreferrer" title="Xem video"
-                     className="hover:opacity-70 transition-opacity">
-                    <Video size={11} className="text-blue-400" />
-                  </a>
+                  isEnrolled ? (
+                    <a href={lesson.video_url} target="_blank" rel="noreferrer" title="Xem video"
+                       className="hover:opacity-70 transition-opacity">
+                      <Video size={11} className="text-blue-400" />
+                    </a>
+                  ) : (
+                    <span title="Video bài giảng (Cần đăng ký)" className="opacity-50">
+                      <Video size={11} className="text-blue-400" />
+                    </span>
+                  )
                 )}
                 {parsePdfUrls(lesson.pdf_url).length > 0 && (
                   <span className="flex items-center gap-0.5 text-red-400" title={`${parsePdfUrls(lesson.pdf_url).length} file PDF`}>
