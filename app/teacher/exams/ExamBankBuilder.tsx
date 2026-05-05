@@ -126,10 +126,11 @@ export default function ExamBankBuilder({ initialExamId, initialData }: Props) {
   const totalScore = ptsMC + (countTF * 1.0) + ptsShort + ptsEssay
 
   const getQuestionScore = (type: string) => {
-    if (type === 'mc') return countMC > 0 ? (ptsMC / countMC) : 0
+    const round4 = (n: number) => Math.round(n * 10000) / 10000
+    if (type === 'mc') return countMC > 0 ? round4(ptsMC / countMC) : 0
     if (type === 'tf') return 1.0
-    if (type === 'short') return countShort > 0 ? (ptsShort / countShort) : 0
-    if (type === 'essay') return countEssay > 0 ? (ptsEssay / countEssay) : 0
+    if (type === 'short') return countShort > 0 ? round4(ptsShort / countShort) : 0
+    if (type === 'essay') return countEssay > 0 ? round4(ptsEssay / countEssay) : 0
     return 0
   }
 

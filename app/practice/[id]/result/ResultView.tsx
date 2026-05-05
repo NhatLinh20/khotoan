@@ -47,7 +47,7 @@ const SUBJECT_MAP: Record<string, string> = { D: 'Đại số', H: 'Hình học'
 // ──────────────────────────────────
 // Scoring logic
 // ──────────────────────────────────
-function scoreQuestion(q: Question, a: StudentAnswer): { score: number; status: 'correct' | 'wrong' | 'pending' } {
+function scoreQuestion(q: Question, a: StudentAnswer): { score: number; status: 'correct' | 'wrong' | 'partial' | 'pending'; tfText?: string } {
   const max = q.max_score ?? 1
   if (q.type === 'mc') {
     if (!a.mc) return { score: 0, status: 'wrong' }
@@ -60,7 +60,8 @@ function scoreQuestion(q: Question, a: StudentAnswer): { score: number; status: 
     const tfMap = a.tf ?? {}
     const correctCount = key.filter(k => tfMap[k.label] === k.is_correct).length
     const s = TF_SCORE_MAP[correctCount] ?? 0
-    return { score: s, status: correctCount === key.length ? 'correct' : correctCount > 0 ? 'correct' : 'wrong' }
+    const status = correctCount === key.length ? 'correct' : correctCount > 0 ? 'partial' : 'wrong'
+    return { score: s, status, tfText: `${correctCount}/${key.length} ý` }
   }
   if (q.type === 'short') {
     const studentNum = parseFloat(a.short ?? '')
@@ -233,9 +234,6 @@ export default function ResultView({
               <thead>
                 <tr className="bg-gray-50/80 dark:bg-slate-800/40 border-b border-gray-100 dark:border-slate-800">
                   <th className="px-3 py-2.5 text-left text-[10px] font-black text-gray-400 uppercase w-10">STT</th>
-                  {exam.exam_type === 'bank' && (
-                    <th className="px-3 py-2.5 text-left text-[10px] font-black text-gray-400 uppercase">Câu hỏi</th>
-                  )}
                   <th className="px-3 py-2.5 text-center text-[10px] font-black text-gray-400 uppercase w-32">Đáp án của bạn</th>
                   <th className="px-3 py-2.5 text-center text-[10px] font-black text-gray-400 uppercase w-32">Đáp án đúng</th>
                   <th className="px-3 py-2.5 text-center text-[10px] font-black text-gray-400 uppercase w-20">Điểm</th>
@@ -243,14 +241,9 @@ export default function ResultView({
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50 dark:divide-slate-800">
-                {results.map(({ question: q, answer: a, score, status }) => (
+                {results.map(({ question: q, answer: a, score, status, tfText }) => (
                   <tr key={q.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-800/20">
                     <td className="px-3 py-3 text-center text-xs font-black text-gray-400">{q.order_index}</td>
-                    {exam.exam_type === 'bank' && (
-                      <td className="px-3 py-3 text-xs text-gray-700 dark:text-gray-300 max-w-xs">
-                        <p className="line-clamp-2">{q.questions?.content ?? '—'}</p>
-                      </td>
-                    )}
                     <td className="px-3 py-3 text-center">
                       <span className="text-xs font-bold text-gray-600 dark:text-gray-300 font-mono">
                         {formatAnswer(q, a)}
@@ -266,12 +259,21 @@ export default function ResultView({
                       <span className="text-[10px] text-gray-400">/{q.max_score ?? 1}</span>
                     </td>
                     <td className="px-3 py-3 text-center">
-                      {status === 'correct' && (
+                      {status === 'correct' && q.type !== 'tf' && (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
                           <CheckCircle2 size={10} /> Đúng
                         </span>
                       )}
-                      {status === 'wrong' && (
+                      {q.type === 'tf' && (
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black ${
+                          status === 'correct' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
+                          status === 'partial' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
+                          'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                        }`}>
+                          {status === 'wrong' ? <XCircle size={10} /> : <CheckCircle2 size={10} />} {tfText}
+                        </span>
+                      )}
+                      {status === 'wrong' && q.type !== 'tf' && (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
                           <XCircle size={10} /> Sai
                         </span>
