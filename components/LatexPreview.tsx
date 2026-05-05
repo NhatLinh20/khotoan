@@ -14,6 +14,37 @@ export default function LatexPreview({ content, className = '' }: LatexPreviewPr
 
   useEffect(() => {
     if (!ref.current) return
+
+    // Helper to replace LaTeX macros with braces.
+    // Handles balanced braces correctly.
+    const replaceMacro = (text: string, macroName: string, startT: string, endT: string) => {
+      let result = text;
+      let index = 0;
+      while ((index = result.indexOf(macroName + '{', index)) !== -1) {
+        let braceCount = 0;
+        let startIndex = index + macroName.length; // index of '{'
+        let endIndex = -1;
+        for (let i = startIndex; i < result.length; i++) {
+          if (result[i] === '{') braceCount++;
+          if (result[i] === '}') {
+            braceCount--;
+            if (braceCount === 0) {
+              endIndex = i;
+              break;
+            }
+          }
+        }
+        if (endIndex !== -1) {
+          const innerContent = result.substring(startIndex + 1, endIndex);
+          const replaced = startT + innerContent + endT;
+          result = result.substring(0, index) + replaced + result.substring(endIndex + 1);
+          index = index + startT.length;
+        } else {
+          index += macroName.length;
+        }
+      }
+      return result;
+    };
     
     // Fix common unsupported LaTeX environments before rendering
     // KaTeX does not support eqnarray/eqnarray*, so we convert it to align*
@@ -40,6 +71,23 @@ export default function LatexPreview({ content, className = '' }: LatexPreviewPr
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');
+
+    // 1.5. Handle LaTeX text commands outside math mode
+    const mathRegex = /(\$\$[\s\S]*?\$\$|\\\[[\s\S]*?\\\]|\\\(.*?\\\)|\\begin\{(?:equation|align|alignat|gather|CD|cases)\*?\}[\s\S]*?\\end\{(?:equation|align|alignat|gather|CD|cases)\*?\}|\$[^$]*?\$)/g;
+    html = html.split(mathRegex).map((part, index) => {
+      // Even indices are text outside math mode
+      if (index % 2 === 0) {
+        let t = part;
+        // Text formatting
+        t = replaceMacro(t, '\\textbf', '<strong>', '</strong>');
+        t = replaceMacro(t, '\\textit', '<em>', '</em>');
+        t = replaceMacro(t, '\\text', '', '');
+        // Quotes
+        t = t.replace(/\\lq\\lq/g, '"').replace(/\\rq\\rq/g, '"');
+        return t;
+      }
+      return part;
+    }).join('');
 
     // 2. Handle LaTeX List Environments (itemize, enumerate)
     html = html
@@ -74,37 +122,6 @@ export default function LatexPreview({ content, className = '' }: LatexPreviewPr
       preProcess: (math) => {
         // Fix common typos that break KaTeX
         let processed = math.replace(/\\limits\\limits/g, '\\limits');
-
-        // Helper to replace custom Vietnamese macros (\hoac, \dongthoi, \hept) 
-        // that use balanced braces which KaTeX macros cannot handle when they contain `&` or `\\`
-        const replaceMacro = (text: string, macroName: string, startT: string, endT: string) => {
-          let result = text;
-          let index = 0;
-          while ((index = result.indexOf(macroName + '{', index)) !== -1) {
-            let braceCount = 0;
-            let startIndex = index + macroName.length; // index of '{'
-            let endIndex = -1;
-            for (let i = startIndex; i < result.length; i++) {
-              if (result[i] === '{') braceCount++;
-              if (result[i] === '}') {
-                braceCount--;
-                if (braceCount === 0) {
-                  endIndex = i;
-                  break;
-                }
-              }
-            }
-            if (endIndex !== -1) {
-              const innerContent = result.substring(startIndex + 1, endIndex);
-              const replaced = startT + innerContent + endT;
-              result = result.substring(0, index) + replaced + result.substring(endIndex + 1);
-              index = index + startT.length;
-            } else {
-              index += macroName.length;
-            }
-          }
-          return result;
-        };
 
         processed = replaceMacro(processed, '\\hoac', '\\left[\\begin{aligned}', '\\end{aligned}\\right.');
         processed = replaceMacro(processed, '\\dongthoi', '\\left\\{\\begin{aligned}', '\\end{aligned}\\right.');

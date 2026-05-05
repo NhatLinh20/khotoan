@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { saveExam } from '@/app/actions/exams'
+import { getChapters, getLessons } from '@/lib/math-taxonomy'
 
 const GRADE_OPTS = [
   { v: 6, l: 'Lớp 6' }, { v: 7, l: 'Lớp 7' }, { v: 8, l: 'Lớp 8' }, { v: 9, l: 'Lớp 9' },
@@ -76,14 +77,61 @@ export default function ExamBankBuilder({ initialExamId, initialData }: Props) {
   const [filterSubject, setFilterSubject] = useState('')
   const [filterDiff, setFilterDiff] = useState('')
   const [filterType, setFilterType] = useState('')
+  const [filterChapter, setFilterChapter] = useState('')
+  const [filterLesson, setFilterLesson] = useState('')
+  const [filterForm, setFilterForm] = useState('')
   const [bankQuestions, setBankQuestions] = useState<Question[]>([])
   const [bankLoading, setBankLoading] = useState(false)
 
-  // Selected questions
-  const [examQuestions, setExamQuestions] = useState<ExamQ[]>(initialData?.questions ?? [])
-  const totalScore = examQuestions.reduce((s, q) => s + (q.max_score ?? 1), 0)
-
   const supabase = createClient()
+
+  // Taxonomy derivation from DB
+  const [dbChapters, setDbChapters] = useState<number[]>([])
+  const [dbLessons, setDbLessons] = useState<number[]>([])
+
+  useEffect(() => {
+    if (!filterGrade || !filterSubject) { setDbChapters([]); return }
+    supabase.from('questions').select('chapter').eq('grade_code', filterGrade).eq('subject_type', filterSubject)
+      .then(({ data }) => {
+        if (data) {
+          const unique = Array.from(new Set(data.map(d => d.chapter).filter(Boolean) as number[])).sort((a,b)=>a-b)
+          setDbChapters(unique)
+        }
+      })
+  }, [filterGrade, filterSubject, supabase])
+
+  useEffect(() => {
+    if (!filterGrade || !filterSubject || !filterChapter) { setDbLessons([]); return }
+    supabase.from('questions').select('lesson').eq('grade_code', filterGrade).eq('subject_type', filterSubject).eq('chapter', Number(filterChapter))
+      .then(({ data }) => {
+        if (data) {
+          const unique = Array.from(new Set(data.map(d => d.lesson).filter(Boolean) as number[])).sort((a,b)=>a-b)
+          setDbLessons(unique)
+        }
+      })
+  }, [filterGrade, filterSubject, filterChapter, supabase])
+
+  // Selected questions & Scoring
+  const [examQuestions, setExamQuestions] = useState<ExamQ[]>(initialData?.questions ?? [])
+  
+  const [ptsMC, setPtsMC] = useState(() => initialData?.questions.filter(q => q.type==='mc').reduce((s, q) => s + (q.max_score||1), 0) ?? 0)
+  const [ptsShort, setPtsShort] = useState(() => initialData?.questions.filter(q => q.type==='short').reduce((s, q) => s + (q.max_score||1), 0) ?? 0)
+  const [ptsEssay, setPtsEssay] = useState(() => initialData?.questions.filter(q => q.type==='essay').reduce((s, q) => s + (q.max_score||1), 0) ?? 0)
+
+  const countMC = examQuestions.filter(q => q.type === 'mc').length
+  const countTF = examQuestions.filter(q => q.type === 'tf').length
+  const countShort = examQuestions.filter(q => q.type === 'short').length
+  const countEssay = examQuestions.filter(q => q.type === 'essay').length
+  
+  const totalScore = ptsMC + (countTF * 1.0) + ptsShort + ptsEssay
+
+  const getQuestionScore = (type: string) => {
+    if (type === 'mc') return countMC > 0 ? (ptsMC / countMC) : 0
+    if (type === 'tf') return 1.0
+    if (type === 'short') return countShort > 0 ? (ptsShort / countShort) : 0
+    if (type === 'essay') return countEssay > 0 ? (ptsEssay / countEssay) : 0
+    return 0
+  }
 
   useEffect(() => {
     const run = async () => {
@@ -95,6 +143,9 @@ export default function ExamBankBuilder({ initialExamId, initialData }: Props) {
         if (filterSubject) q = q.eq('subject_type', filterSubject)
         if (filterDiff) q = q.eq('difficulty', filterDiff)
         if (filterType) q = q.eq('type', filterType)
+        if (filterChapter) q = q.eq('chapter', Number(filterChapter))
+        if (filterLesson) q = q.eq('lesson', Number(filterLesson))
+        if (filterForm) q = q.eq('form', Number(filterForm))
       }
       const { data } = await q.order('created_at', { ascending: false }).limit(100)
       setBankQuestions(data ?? [])
@@ -102,7 +153,7 @@ export default function ExamBankBuilder({ initialExamId, initialData }: Props) {
     }
     const t = setTimeout(run, 300)
     return () => clearTimeout(t)
-  }, [codeSearch, filterGrade, filterSubject, filterDiff, filterType])
+  }, [codeSearch, filterGrade, filterSubject, filterDiff, filterType, filterChapter, filterLesson, filterForm])
 
   const addedIds = useMemo(() => new Set(examQuestions.map(q => q.id)), [examQuestions])
 
@@ -125,7 +176,7 @@ export default function ExamBankBuilder({ initialExamId, initialData }: Props) {
         exam_type: 'bank', is_published: publish,
         questions: examQuestions.map((q, i) => ({
           question_id: q.id, order_index: i + 1, type: q.type,
-          max_score: q.max_score ?? 1,
+          max_score: getQuestionScore(q.type) || 0,
         })),
       })
       if (res.error) { setError(res.error); return }
@@ -199,6 +250,59 @@ export default function ExamBankBuilder({ initialExamId, initialData }: Props) {
             </div>
           </div>
 
+          {/* Scoring Table */}
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-5 space-y-4">
+            <h2 className="text-sm font-black text-gray-900 dark:text-white">Cấu trúc điểm</h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-100 dark:border-slate-800">
+                    <th className="py-2 text-left font-bold text-gray-500 text-xs">Loại câu</th>
+                    <th className="py-2 text-center font-bold text-gray-500 text-xs">Số câu</th>
+                    <th className="py-2 text-right font-bold text-gray-500 text-xs w-28">Tổng điểm</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50 dark:divide-slate-800 text-sm">
+                  <tr>
+                    <td className="py-2">Trắc nghiệm</td>
+                    <td className="py-2 text-center font-bold">{countMC}</td>
+                    <td className="py-2">
+                      <input type="number" step="any" min={0} value={ptsMC} onChange={e => setPtsMC(Number(e.target.value) || 0)} className="w-full text-right bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="py-2">Đúng/Sai</td>
+                    <td className="py-2 text-center font-bold">{countTF}</td>
+                    <td className="py-2">
+                      <input type="number" disabled value={countTF * 1.0} className="w-full text-right bg-gray-100 dark:bg-slate-800/50 text-gray-400 border border-gray-200 dark:border-slate-700 rounded-lg px-2 py-1 cursor-not-allowed" />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="py-2">Trả lời ngắn</td>
+                    <td className="py-2 text-center font-bold">{countShort}</td>
+                    <td className="py-2">
+                      <input type="number" step="any" min={0} value={ptsShort} onChange={e => setPtsShort(Number(e.target.value) || 0)} className="w-full text-right bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="py-2">Tự luận</td>
+                    <td className="py-2 text-center font-bold">{countEssay}</td>
+                    <td className="py-2">
+                      <input type="number" step="any" min={0} value={ptsEssay} onChange={e => setPtsEssay(Number(e.target.value) || 0)} className="w-full text-right bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                    </td>
+                  </tr>
+                </tbody>
+                <tfoot className="border-t-2 border-gray-100 dark:border-slate-800">
+                  <tr>
+                    <td className="py-2 font-black">Tổng cộng</td>
+                    <td className="py-2 text-center font-black">{examQuestions.length}</td>
+                    <td className="py-2 text-right font-black text-primary">{totalScore} đ</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+
           {/* Selected questions */}
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 overflow-hidden">
             <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
@@ -223,6 +327,7 @@ export default function ExamBankBuilder({ initialExamId, initialData }: Props) {
                       <p className="text-[11px] text-gray-500 line-clamp-1 mt-0.5">{q.content.slice(0, 60)}…</p>
                     </div>
                     <span className={`text-[9px] font-black px-1.5 py-0.5 rounded shrink-0 ${TYPE_COLORS[q.type]}`}>{q.type.toUpperCase()}</span>
+                    <span className="text-[10px] font-bold text-gray-500 w-10 text-right shrink-0">{Number(getQuestionScore(q.type).toFixed(2))}đ</span>
                     <button onClick={() => handleRemove(q._uid)} className="p-1 rounded-lg text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 opacity-0 group-hover:opacity-100 transition-all shrink-0">
                       <X size={12} />
                     </button>
@@ -248,19 +353,32 @@ export default function ExamBankBuilder({ initialExamId, initialData }: Props) {
                 />
               </div>
               {/* Filters */}
-              <div className="grid grid-cols-4 gap-2">
-                <select value={filterGrade} onChange={e => { setFilterGrade(e.target.value) }}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                <select value={filterGrade} onChange={e => { setFilterGrade(e.target.value); setFilterChapter(''); setFilterLesson(''); setFilterForm('') }}
                   className="px-2 py-1.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20">
                   <option value="">Tất cả lớp</option>
                   <option value="6">Lớp 6</option><option value="7">Lớp 7</option>
                   <option value="8">Lớp 8</option><option value="9">Lớp 9</option>
                   <option value="0">Lớp 10</option><option value="1">Lớp 11</option><option value="2">Lớp 12</option>
                 </select>
-                <select value={filterSubject} onChange={e => setFilterSubject(e.target.value)}
+                <select value={filterSubject} onChange={e => { setFilterSubject(e.target.value); setFilterChapter(''); setFilterLesson(''); setFilterForm('') }}
                   className="px-2 py-1.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20">
                   <option value="">Tất cả môn</option>
                   {SUBJECT_OPTS.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
                 </select>
+                <select value={filterChapter} onChange={e => { setFilterChapter(e.target.value); setFilterLesson(''); setFilterForm('') }}
+                  className="px-2 py-1.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20">
+                  <option value="">Tất cả chương</option>
+                  {dbChapters.map(c => <option key={c} value={c}>Chương {c}</option>)}
+                </select>
+                <select value={filterLesson} onChange={e => { setFilterLesson(e.target.value); setFilterForm('') }}
+                  className="px-2 py-1.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20">
+                  <option value="">Tất cả bài</option>
+                  {dbLessons.map(l => <option key={l} value={l}>Bài {l}</option>)}
+                </select>
+                
+                <input type="number" placeholder="Dạng..." value={filterForm} onChange={e => setFilterForm(e.target.value)}
+                  className="px-2 py-1.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20" />
                 <select value={filterDiff} onChange={e => setFilterDiff(e.target.value)}
                   className="px-2 py-1.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20">
                   <option value="">Tất cả mức</option>

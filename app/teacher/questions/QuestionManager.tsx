@@ -6,7 +6,6 @@ import {
   BookOpen, CheckCircle2, RotateCcw, X, Lightbulb, Clock, XCircle
 } from 'lucide-react'
 import Link from 'next/link'
-import { getChapters, getLessons, getForms } from '@/lib/math-taxonomy'
 import DeleteQuestionButton from './DeleteButton'
 import { createClient } from '@/lib/supabase/client'
 import LatexPreview from '@/components/LatexPreview'
@@ -118,9 +117,43 @@ export default function QuestionManager({ questions: initialQuestions, initialPa
   const [loading, setLoading] = useState(false)
   const [currentIndex, setCurrentIndex] = useState(0)
 
-  const chapters = useMemo(() => getChapters(grade, subject), [grade, subject])
-  const lessons = useMemo(() => getLessons(grade, subject, Number(chapter)), [grade, subject, chapter])
-  const forms = useMemo(() => getForms(grade, subject, Number(chapter), Number(lesson)), [grade, subject, chapter, lesson])
+  // DB-driven dropdown options
+  const [dbChapters, setDbChapters] = useState<number[]>([])
+  const [dbLessons, setDbLessons] = useState<number[]>([])
+  const [dbForms, setDbForms] = useState<number[]>([])
+
+  useEffect(() => {
+    if (!grade || !subject) { setDbChapters([]); return }
+    supabase.from('questions').select('chapter').eq('grade_code', grade).eq('subject_type', subject)
+      .then(({ data }) => {
+        if (data) {
+          const unique = Array.from(new Set(data.map(d => d.chapter).filter(Boolean) as number[])).sort((a,b)=>a-b)
+          setDbChapters(unique)
+        }
+      })
+  }, [grade, subject, supabase])
+
+  useEffect(() => {
+    if (!grade || !subject || !chapter) { setDbLessons([]); return }
+    supabase.from('questions').select('lesson').eq('grade_code', grade).eq('subject_type', subject).eq('chapter', Number(chapter))
+      .then(({ data }) => {
+        if (data) {
+          const unique = Array.from(new Set(data.map(d => d.lesson).filter(Boolean) as number[])).sort((a,b)=>a-b)
+          setDbLessons(unique)
+        }
+      })
+  }, [grade, subject, chapter, supabase])
+
+  useEffect(() => {
+    if (!grade || !subject || !chapter || !lesson) { setDbForms([]); return }
+    supabase.from('questions').select('form').eq('grade_code', grade).eq('subject_type', subject).eq('chapter', Number(chapter)).eq('lesson', Number(lesson))
+      .then(({ data }) => {
+        if (data) {
+          const unique = Array.from(new Set(data.map(d => d.form).filter(Boolean) as number[])).sort((a,b)=>a-b)
+          setDbForms(unique)
+        }
+      })
+  }, [grade, subject, chapter, lesson, supabase])
 
   useEffect(() => {
     async function fetchQuestions() {
@@ -205,26 +238,26 @@ export default function QuestionManager({ questions: initialQuestions, initialPa
             <option value="C">C — Chuyên đề</option>
           </SelectField>
 
-          <SelectField label="③ Chương" value={chapter} onChange={(v) => { setChapter(v); setLesson(''); setForm('') }} disabled={!grade || chapters.length === 0}>
+          <SelectField label="③ Chương" value={chapter} onChange={(v) => { setChapter(v); setLesson(''); setForm('') }} disabled={!grade || !subject || dbChapters.length === 0}>
             <option value="">— Tất cả chương —</option>
-            {chapters.map((c) => (
-              <option key={c.value} value={String(c.value)}>
-                {!subject ? `[${c.subject}] ${c.label}` : c.label}
+            {dbChapters.map((c) => (
+              <option key={c} value={String(c)}>
+                Chương {c}
               </option>
             ))}
           </SelectField>
 
-          <SelectField label="④ Bài học" value={lesson} onChange={(v) => { setLesson(v); setForm('') }} disabled={!chapter || lessons.length === 0}>
+          <SelectField label="④ Bài học" value={lesson} onChange={(v) => { setLesson(v); setForm('') }} disabled={!chapter || dbLessons.length === 0}>
             <option value="">— Tất cả bài —</option>
-            {lessons.map((l) => (
-              <option key={l.value} value={String(l.value)}>{l.label}</option>
+            {dbLessons.map((l) => (
+              <option key={l} value={String(l)}>Bài {l}</option>
             ))}
           </SelectField>
 
-          <SelectField label="⑤ Dạng bài" value={form} onChange={setForm} disabled={!lesson || forms.length === 0}>
+          <SelectField label="⑤ Dạng bài" value={form} onChange={setForm} disabled={!lesson || dbForms.length === 0}>
             <option value="">— Tất cả dạng —</option>
-            {forms.map((f) => (
-              <option key={f.value} value={String(f.value)}>{f.label}</option>
+            {dbForms.map((f) => (
+              <option key={f} value={String(f)}>Dạng {f}</option>
             ))}
           </SelectField>
 
