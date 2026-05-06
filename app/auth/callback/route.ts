@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { logLoginInternal } from '@/lib/auth-logger'
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
@@ -16,9 +17,8 @@ export async function GET(request: Request) {
       const userAgent = request.headers.get('user-agent') || 'unknown'
       const token = authData.session?.access_token
       
-      import('@/lib/auth-logger').then(({ logLoginInternal }) => {
-        logLoginInternal(authData.user.id, ip, userAgent, token).catch(err => console.error('[auth] logLoginInternal error:', err))
-      })
+      // Đợi ghi log xong mới redirect để tránh Vercel kill function sớm
+      await logLoginInternal(authData.user.id, ip, userAgent, token)
 
       return NextResponse.redirect(`${origin}${next}`)
     }

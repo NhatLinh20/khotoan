@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { headers } from 'next/headers'
+import { logLoginInternal } from '@/lib/auth-logger'
 
 const ZALO_NUMBER = '0812878792'
 const ZALO_LINK = `https://zalo.me/${ZALO_NUMBER}`
@@ -44,9 +45,8 @@ export async function login(formData: FormData) {
     const userAgent = headersList.get('user-agent') || 'unknown'
     const token = authData.session?.access_token
     
-    import('@/lib/auth-logger').then(({ logLoginInternal }) => {
-      logLoginInternal(userId, ip, userAgent, token).catch(err => console.error('[auth] logLoginInternal error:', err))
-    })
+    // Đợi ghi log xong mới redirect để tránh Vercel kill function sớm
+    await logLoginInternal(userId, ip, userAgent, token)
   }
 
   await revalidatePath('/', 'layout')
