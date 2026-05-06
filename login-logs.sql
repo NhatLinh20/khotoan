@@ -5,7 +5,7 @@
 
 CREATE TABLE IF NOT EXISTS public.login_logs (
   id               uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id          uuid REFERENCES auth.users ON DELETE CASCADE NOT NULL,
+  user_id          uuid REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
   ip_address       text,
   country          text,
   country_code     text,
