@@ -1,14 +1,14 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { logout } from '@/app/actions/auth'
+import DashboardClient from './DashboardClient'
+
+export const dynamic = 'force-dynamic'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) {
-    redirect('/login')
-  }
+  if (!user) redirect('/login')
 
   const { data: profile } = await supabase
     .from('profiles')
@@ -16,43 +16,74 @@ export default async function DashboardPage() {
     .eq('id', user.id)
     .single()
 
-  // Học sinh chưa được duyệt → chuyển sang trang chờ kích hoạt
   if (profile && profile.role === 'student' && !profile.is_approved) {
     redirect('/pending')
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-xl shadow-md p-6 flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Xin chào, {profile?.full_name || 'Học viên'}!</h1>
-            <p className="text-gray-600">Lớp {profile?.grade || 'Chưa cập nhật'}</p>
-          </div>
-          <form action={logout}>
-            <button className="bg-red-50 text-red-600 px-4 py-2 rounded-lg font-medium hover:bg-red-100 transition-colors">
-              Đăng xuất
-            </button>
-          </form>
-        </div>
+  // ── Fetch exam results ──────────────────────────────────────────────────────
+  const { data: examResults } = await supabase
+    .from('exam_results')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
 
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-blue-600 rounded-xl p-6 text-white shadow-lg">
-            <h2 className="text-xl font-semibold mb-2">Khóa học của bạn</h2>
-            <p className="opacity-90">Bắt đầu học ngay để đạt điểm cao.</p>
-            <button className="mt-4 bg-white text-blue-600 px-4 py-2 rounded-lg font-bold">
-              Tiếp tục học
-            </button>
-          </div>
-          <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
-            <h2 className="text-xl font-semibold mb-2 text-gray-900">Kết quả luyện tập</h2>
-            <p className="text-gray-600">Bạn chưa có bài luyện tập nào.</p>
-            <button className="mt-4 border border-blue-600 text-blue-600 px-4 py-2 rounded-lg font-bold">
-              Làm bài ngay
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+  // ── Fetch enrollments + course info ────────────────────────────────────────
+  const { data: enrollments } = await supabase
+    .from('enrollments')
+    .select('*, courses(id, title, grade, teacher_name, thumbnail_url, description)')
+    .eq('user_id', user.id)
+    .order('enrolled_at', { ascending: false })
+
+  // ── Fetch leaderboard (same grade) ─────────────────────────────────────────
+  let leaderboard: any[] = []
+  if (profile?.grade) {
+    const { data: leaderboardRaw } = await supabase.rpc('get_leaderboard_by_grade', {
+      p_grade: profile.grade,
+      p_limit: 10,
+    })
+    leaderboard = leaderboardRaw || []
+  }
+
+  // ── Compute stats ───────────────────────────────────────────────────────────
+  const results = examResults || []
+  const totalExams = results.length
+  const avgScore = totalExams > 0
+    ? Math.round(results.reduce((s, r) => s + (r.score / (r.total_questions || 1)) * 100, 0) / totalExams)
+    : 0
+  const totalCorrect = results.reduce((s, r) => s + (r.score || 0), 0)
+  const totalSeconds = results.reduce((s, r) => s + (r.time_spent_seconds || 0), 0)
+
+  // Last 7 results for line chart
+  const recentChart = [...results].reverse().slice(-7).map((r) => ({
+    date: new Date(r.created_at).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }),
+    score: Math.round((r.score / (r.total_questions || 1)) * 10 * 10) / 10,
+    topic: r.topic || 'Luyện thi',
+  }))
+
+  // Pie chart data
+  const totalQuestions = results.reduce((s, r) => s + (r.total_questions || 0), 0)
+  const totalWrong = totalQuestions - totalCorrect
+  const pieData = [
+    { name: 'Đúng', value: totalCorrect, color: '#22c55e' },
+    { name: 'Sai', value: totalWrong, color: '#ef4444' },
+  ]
+
+  // Recent 5 for history table
+  const recentExams = results.slice(0, 5)
+
+  return (
+    <DashboardClient
+      profile={profile}
+      user={user}
+      totalExams={totalExams}
+      avgScore={avgScore}
+      totalCorrect={totalCorrect}
+      totalSeconds={totalSeconds}
+      recentChart={recentChart}
+      pieData={pieData}
+      enrollments={enrollments || []}
+      recentExams={recentExams}
+      leaderboard={leaderboard}
+    />
   )
 }
