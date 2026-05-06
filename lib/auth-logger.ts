@@ -94,23 +94,30 @@ async function detectAnomaly(
   return { isSuspicious: false, reason: null }
 }
 
-export async function logLoginInternal(userId: string, ip: string, userAgent: string) {
+export async function logLoginInternal(userId: string, ip: string, userAgent: string, token?: string) {
   try {
-    const serviceClient = createServiceClient(
+    const authClient = createServiceClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      token ? {
+        global: {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      } : undefined
     )
 
     const ipInfo = await getIPInfo(ip)
 
     const { isSuspicious, reason } = await detectAnomaly(
-      serviceClient,
+      authClient,
       userId,
       ip,
       ipInfo?.country || 'Unknown'
     )
 
-    const { error: insertError } = await serviceClient.from('login_logs').insert({
+    const { error: insertError } = await authClient.from('login_logs').insert({
       user_id: userId,
       ip_address: ip,
       country: ipInfo?.country || null,

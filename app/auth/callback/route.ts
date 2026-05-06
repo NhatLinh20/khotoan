@@ -14,9 +14,10 @@ export async function GET(request: Request) {
       const forwarded = request.headers.get('x-forwarded-for')
       const ip = forwarded ? forwarded.split(',')[0].trim() : (request.headers.get('x-real-ip') || 'unknown')
       const userAgent = request.headers.get('user-agent') || 'unknown'
+      const token = authData.session?.access_token
       
       import('@/lib/auth-logger').then(({ logLoginInternal }) => {
-        logLoginInternal(authData.user.id, ip, userAgent).catch(err => console.error('[auth] logLoginInternal error:', err))
+        logLoginInternal(authData.user.id, ip, userAgent, token).catch(err => console.error('[auth] logLoginInternal error:', err))
       })
 
       return NextResponse.redirect(`${origin}${next}`)

@@ -42,9 +42,10 @@ export async function login(formData: FormData) {
     const forwarded = headersList.get('x-forwarded-for')
     const ip = forwarded ? forwarded.split(',')[0].trim() : (headersList.get('x-real-ip') || 'unknown')
     const userAgent = headersList.get('user-agent') || 'unknown'
+    const token = authData.session?.access_token
     
     import('@/lib/auth-logger').then(({ logLoginInternal }) => {
-      logLoginInternal(userId, ip, userAgent).catch(err => console.error('[auth] logLoginInternal error:', err))
+      logLoginInternal(userId, ip, userAgent, token).catch(err => console.error('[auth] logLoginInternal error:', err))
     })
   }
 
