@@ -4,18 +4,37 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 
+const ZALO_NUMBER = '0812878792'
+const ZALO_LINK = `https://zalo.me/${ZALO_NUMBER}`
+const NOT_APPROVED_MSG = `Tài khoản chưa được kích hoạt. Vui lòng liên hệ Zalo: ${ZALO_NUMBER} để được hỗ trợ.`
+
 export async function login(formData: FormData) {
   const email = formData.get('email') as string
   const password = formData.get('password') as string
   const supabase = await createClient()
 
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data: authData, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   })
 
   if (error) {
     return { error: error.message }
+  }
+
+  // Kiểm tra is_approved trong profiles
+  const userId = authData.user?.id
+  if (userId) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role, is_approved')
+      .eq('id', userId)
+      .single()
+
+    // Chỉ học sinh mới cần duyệt; giáo viên luôn được vào
+    if (profile && profile.role === 'student' && !profile.is_approved) {
+      return { error: NOT_APPROVED_MSG }
+    }
   }
 
   await revalidatePath('/', 'layout')
@@ -69,11 +88,10 @@ export async function register(formData: FormData) {
     return { error: error.message }
   }
 
-  // Sau khi đăng ký thành công, Supabase có thể yêu cầu xác nhận email.
-  // Nếu email confirmation bị tắt, user sẽ được log in ngay.
-  
+  // Redirect sang /pending — dashboard sẽ chặn nếu is_approved = false
+  // KHÔNG gọi signOut vì không đủ tin cậy để clear cookie trong server action
   await revalidatePath('/', 'layout')
-  redirect('/dashboard')
+  redirect('/pending')
 }
 
 export async function logout() {
@@ -81,4 +99,40 @@ export async function logout() {
   await supabase.auth.signOut()
   await revalidatePath('/', 'layout')
   redirect('/login')
+}
+
+// ─── Teacher actions ───────────────────────────────────────────────────────────
+
+export async function approveStudent(studentId: string) {
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('profiles')
+    .update({ is_approved: true })
+    .eq('id', studentId)
+  if (error) return { error: error.message }
+  revalidatePath('/teacher/students')
+  return { success: true }
+}
+
+export async function revokeStudent(studentId: string) {
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('profiles')
+    .update({ is_approved: false })
+    .eq('id', studentId)
+  if (error) return { error: error.message }
+  revalidatePath('/teacher/students')
+  return { success: true }
+}
+
+export async function deleteStudent(studentId: string) {
+  const supabase = await createClient()
+  // Xóa profile (cascade sẽ xóa auth user nếu có policy)
+  const { error } = await supabase
+    .from('profiles')
+    .delete()
+    .eq('id', studentId)
+  if (error) return { error: error.message }
+  revalidatePath('/teacher/students')
+  return { success: true }
 }

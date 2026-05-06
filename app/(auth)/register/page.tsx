@@ -15,10 +15,13 @@ export default function RegisterPage() {
     
     const result = await register(formData)
     
+    // Nếu register thành công, server sẽ redirect('/pending') tự động.
+    // Chỉ cần xử lý lỗi ở đây.
     if (result?.error) {
       setError(result.error)
       setLoading(false)
     }
+    // Nếu không có error mà không redirect được (rất hiếm), vẫn giữ loading
   }
 
   return (

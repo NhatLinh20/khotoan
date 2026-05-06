@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Menu, X, LogOut, User as UserIcon, BookOpen, GraduationCap, Home, Settings } from 'lucide-react'
+import { Menu, X, LogOut, User as UserIcon, BookOpen, GraduationCap, Home, Settings, Clock } from 'lucide-react'
 import { logout } from '@/app/actions/auth'
 
 interface NavbarProps {
@@ -15,11 +15,17 @@ export default function Navbar({ user, profile }: NavbarProps) {
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen)
   const isTeacher = profile?.role === 'teacher'
+  const isPending = user && !isTeacher && !profile?.is_approved
 
+  // Học sinh chưa duyệt → ẩn link /practice và /courses/[id]
   const navLinks = [
     { href: '/', label: 'Trang chủ', icon: <Home size={18} /> },
-    { href: '/courses', label: 'Khóa học', icon: <BookOpen size={18} /> },
-    { href: '/practice', label: 'Luyện thi', icon: <GraduationCap size={18} /> },
+    ...(isPending
+      ? []
+      : [
+          { href: '/courses', label: 'Khóa học', icon: <BookOpen size={18} /> },
+          { href: '/practice', label: 'Luyện thi', icon: <GraduationCap size={18} /> },
+        ]),
     ...(isTeacher ? [{ href: '/teacher', label: 'Quản lý', icon: <Settings size={18} /> }] : []),
   ]
 
@@ -50,17 +56,29 @@ export default function Navbar({ user, profile }: NavbarProps) {
           {user ? (
             <div className="flex items-center gap-4 pl-4 border-l border-gray-200 dark:border-slate-800">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-primary border border-primary/20">
-                  <UserIcon size={20} />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-sm font-bold text-gray-900 dark:text-white leading-tight">
-                    {user.user_metadata?.full_name || 'Học viên'}
-                  </span>
-                  <span className="text-[10px] uppercase font-black text-secondary tracking-widest">
-                    {isTeacher ? 'Giáo viên' : `Lớp ${user.user_metadata?.grade || '?'}`}
-                  </span>
-                </div>
+                {isPending ? (
+                  /* Tài khoản chờ duyệt */
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 rounded-full border border-amber-200 dark:border-amber-800/40">
+                    <Clock size={14} className="text-amber-600 dark:text-amber-400 animate-pulse" />
+                    <span className="text-xs font-bold text-amber-700 dark:text-amber-300 whitespace-nowrap">
+                      Tài khoản chờ kích hoạt
+                    </span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-primary border border-primary/20">
+                      <UserIcon size={20} />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-bold text-gray-900 dark:text-white leading-tight">
+                        {user.user_metadata?.full_name || profile?.full_name || 'Học viên'}
+                      </span>
+                      <span className="text-[10px] uppercase font-black text-secondary tracking-widest">
+                        {isTeacher ? 'Giáo viên' : `Lớp ${user.user_metadata?.grade || profile?.grade || '?'}`}
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
               <button 
                 onClick={() => logout()}
@@ -110,15 +128,25 @@ export default function Navbar({ user, profile }: NavbarProps) {
             <div className="pt-6 border-t border-gray-100 dark:border-slate-800">
               {user ? (
                 <div className="space-y-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-primary">
-                      <UserIcon size={24} />
+                  {isPending ? (
+                    <div className="flex items-center gap-3 px-4 py-3 bg-amber-50 dark:bg-amber-900/20 rounded-2xl border border-amber-200 dark:border-amber-800/40">
+                      <Clock size={20} className="text-amber-500 animate-pulse" />
+                      <div>
+                        <p className="font-bold text-amber-800 dark:text-amber-300 text-sm">Tài khoản chờ kích hoạt</p>
+                        <p className="text-xs text-amber-600 dark:text-amber-400">Liên hệ giáo viên để được duyệt</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-bold text-gray-900">{user.user_metadata?.full_name}</p>
-                      <p className="text-sm text-gray-500">{isTeacher ? 'Giáo viên' : `Lớp ${user.user_metadata?.grade}`}</p>
+                  ) : (
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-primary">
+                        <UserIcon size={24} />
+                      </div>
+                      <div>
+                        <p className="font-bold text-gray-900">{user.user_metadata?.full_name || profile?.full_name}</p>
+                        <p className="text-sm text-gray-500">{isTeacher ? 'Giáo viên' : `Lớp ${user.user_metadata?.grade || profile?.grade}`}</p>
+                      </div>
                     </div>
-                  </div>
+                  )}
                   <button 
                     onClick={() => logout()}
                     className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-red-50 text-red-600 font-bold"

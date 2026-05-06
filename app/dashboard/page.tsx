@@ -16,6 +16,11 @@ export default async function DashboardPage() {
     .eq('id', user.id)
     .single()
 
+  // Học sinh chưa được duyệt → chuyển sang trang chờ kích hoạt
+  if (profile && profile.role === 'student' && !profile.is_approved) {
+    redirect('/pending')
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-4xl mx-auto">
