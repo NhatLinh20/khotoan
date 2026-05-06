@@ -8,8 +8,17 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient()
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
-    if (!error) {
+    const { data: authData, error } = await supabase.auth.exchangeCodeForSession(code)
+    if (!error && authData.user) {
+      // Ghi log đăng nhập
+      const forwarded = request.headers.get('x-forwarded-for')
+      const ip = forwarded ? forwarded.split(',')[0].trim() : (request.headers.get('x-real-ip') || 'unknown')
+      const userAgent = request.headers.get('user-agent') || 'unknown'
+      
+      import('@/lib/auth-logger').then(({ logLoginInternal }) => {
+        logLoginInternal(authData.user.id, ip, userAgent).catch(err => console.error('[auth] logLoginInternal error:', err))
+      })
+
       return NextResponse.redirect(`${origin}${next}`)
     }
   }

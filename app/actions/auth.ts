@@ -39,20 +39,13 @@ export async function login(formData: FormData) {
 
     // Ghi log đăng nhập (fire-and-forget, không block redirect)
     const headersList = await headers()
-    const origin = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
-    const cookie = headersList.get('cookie') || ''
-    const xForwardedFor = headersList.get('x-forwarded-for') || ''
-    const xRealIp = headersList.get('x-real-ip') || ''
-
-    fetch(`${origin}/api/auth/log-login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        cookie,
-        ...(xForwardedFor && { 'x-forwarded-for': xForwardedFor }),
-        ...(xRealIp && { 'x-real-ip': xRealIp }),
-      },
-    }).catch((err) => console.error('[auth] log-login fetch error:', err))
+    const forwarded = headersList.get('x-forwarded-for')
+    const ip = forwarded ? forwarded.split(',')[0].trim() : (headersList.get('x-real-ip') || 'unknown')
+    const userAgent = headersList.get('user-agent') || 'unknown'
+    
+    import('@/lib/auth-logger').then(({ logLoginInternal }) => {
+      logLoginInternal(userId, ip, userAgent).catch(err => console.error('[auth] logLoginInternal error:', err))
+    })
   }
 
   await revalidatePath('/', 'layout')
