@@ -35,7 +35,7 @@ export default async function StudentsPage() {
     <StudentsClient
       pending={pending}
       approved={approved}
-      loginLogs={loginLogs || []}
+      loginLogs={(loginLogs as any) || []}
     />
   )
 }

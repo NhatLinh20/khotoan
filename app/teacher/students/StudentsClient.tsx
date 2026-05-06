@@ -97,9 +97,10 @@ export default function StudentsClient({ pending, approved, loginLogs }: Student
 
   const currentLogs = (loginLogs || []).filter((l) => {
     const q = search.toLowerCase()
+    const p = Array.isArray(l.profiles) ? l.profiles[0] : l.profiles
     return (
-      (l.profiles?.full_name || '').toLowerCase().includes(q) ||
-      (l.profiles?.email || '').toLowerCase().includes(q) ||
+      (p?.full_name || '').toLowerCase().includes(q) ||
+      (p?.email || '').toLowerCase().includes(q) ||
       (l.ip_address || '').toLowerCase().includes(q)
     )
   })
@@ -309,19 +310,21 @@ export default function StudentsClient({ pending, approved, loginLogs }: Student
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
-                {currentLogs.map((log) => (
-                  <tr key={log.id} className="bg-white dark:bg-slate-900 hover:bg-gray-50/60 dark:hover:bg-slate-800/40 transition-colors">
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-sm flex-shrink-0">
-                          {(log.profiles?.full_name || '?')[0].toUpperCase()}
+                {currentLogs.map((log) => {
+                  const p = Array.isArray(log.profiles) ? log.profiles[0] : log.profiles
+                  return (
+                    <tr key={log.id} className="bg-white dark:bg-slate-900 hover:bg-gray-50/60 dark:hover:bg-slate-800/40 transition-colors">
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-sm flex-shrink-0">
+                            {(p?.full_name || '?')[0].toUpperCase()}
+                          </div>
+                          <div>
+                            <span className="font-semibold text-gray-900 dark:text-white block">{p?.full_name || '—'}</span>
+                            <span className="text-xs text-gray-500">{p?.email || '—'}</span>
+                          </div>
                         </div>
-                        <div>
-                          <span className="font-semibold text-gray-900 dark:text-white block">{log.profiles?.full_name || '—'}</span>
-                          <span className="text-xs text-gray-500">{log.profiles?.email || '—'}</span>
-                        </div>
-                      </div>
-                    </td>
+                      </td>
                     <td className="px-5 py-4">
                       <div className="flex flex-col gap-1">
                         <span className="font-mono text-xs bg-gray-100 dark:bg-slate-800 px-2 py-1 rounded w-fit text-gray-700 dark:text-gray-300">
@@ -357,11 +360,12 @@ export default function StudentsClient({ pending, approved, loginLogs }: Student
                         </span>
                       </div>
                     </td>
-                    <td className="px-5 py-4 whitespace-nowrap text-gray-500 dark:text-gray-400 text-xs">
-                      {new Date(log.logged_in_at).toLocaleString('vi-VN')}
-                    </td>
-                  </tr>
-                ))}
+                      <td className="px-5 py-4 whitespace-nowrap text-gray-500 dark:text-gray-400 text-xs">
+                        {new Date(log.logged_in_at).toLocaleString('vi-VN')}
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>

@@ -9,7 +9,7 @@ function extractIP(req: NextRequest): string {
     // x-forwarded-for có thể chứa nhiều IP: "client, proxy1, proxy2"
     return forwarded.split(',')[0].trim()
   }
-  return req.headers.get('x-real-ip') || req.ip || 'unknown'
+  return req.headers.get('x-real-ip') || 'unknown'
 }
 
 // ─── Helper: Lấy thông tin vị trí từ IP (dùng ip-api.com - miễn phí) ─────────
@@ -65,7 +65,7 @@ interface SuspiciousResult {
 }
 
 async function detectAnomaly(
-  supabase: ReturnType<typeof createServiceClient>,
+  supabase: any,
   userId: string,
   currentIP: string,
   currentCountry: string
@@ -86,22 +86,22 @@ async function detectAnomaly(
   const reasons: string[] = []
 
   // 1. Kiểm tra quốc gia mới
-  const knownCountries = new Set(recentLogs.map((l) => l.country).filter(Boolean))
+  const knownCountries = new Set((recentLogs || []).map((l: any) => l.country).filter(Boolean))
   if (currentCountry && currentCountry !== 'Localhost' && !knownCountries.has(currentCountry)) {
     reasons.push(`Quốc gia mới chưa gặp: ${currentCountry}`)
   }
 
   // 2. Đăng nhập từ 2 IP khác nhau trong vòng 1 giờ
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
-  const recentHourLogs = recentLogs.filter((l) => l.logged_in_at > oneHourAgo)
-  const recentIPs = new Set(recentHourLogs.map((l) => l.ip_address).filter(Boolean))
+  const recentHourLogs = (recentLogs || []).filter((l: any) => l.logged_in_at > oneHourAgo)
+  const recentIPs = new Set(recentHourLogs.map((l: any) => l.ip_address).filter(Boolean))
   if (recentIPs.size > 0 && !recentIPs.has(currentIP) && currentIP !== 'unknown') {
     reasons.push(`Đăng nhập từ IP mới trong vòng 1 giờ (IP cũ: ${[...recentIPs][0]})`)
   }
 
   // 3. IP hoàn toàn mới (chưa bao giờ dùng)
-  const knownIPs = new Set(recentLogs.map((l) => l.ip_address).filter(Boolean))
-  if (currentIP !== 'unknown' && !knownIPs.has(currentIP) && recentLogs.length >= 3) {
+  const knownIPs = new Set((recentLogs || []).map((l: any) => l.ip_address).filter(Boolean))
+  if (currentIP !== 'unknown' && !knownIPs.has(currentIP) && (recentLogs || []).length >= 3) {
     reasons.push(`Địa chỉ IP mới: ${currentIP}`)
   }
 
