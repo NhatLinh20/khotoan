@@ -55,11 +55,12 @@ async function detectAnomaly(
   supabase: any,
   userId: string,
   currentIP: string,
-  currentCountry: string
+  currentCountry: string,
+  currentUserAgent: string
 ): Promise<SuspiciousResult> {
   const { data: recentLogs } = await supabase
     .from('login_logs')
-    .select('ip_address, country, logged_in_at')
+    .select('ip_address, country, user_agent, logged_in_at')
     .eq('user_id', userId)
     .order('logged_in_at', { ascending: false })
     .limit(10)
@@ -72,19 +73,26 @@ async function detectAnomaly(
 
   const knownCountries = new Set((recentLogs || []).map((l: any) => l.country).filter(Boolean))
   if (currentCountry && currentCountry !== 'Localhost' && !knownCountries.has(currentCountry)) {
-    reasons.push(`Quốc gia mới chưa gặp: ${currentCountry}`)
+    reasons.push(`Quốc gia lạ: ${currentCountry}`)
   }
 
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
   const recentHourLogs = (recentLogs || []).filter((l: any) => l.logged_in_at > oneHourAgo)
   const recentIPs = new Set(recentHourLogs.map((l: any) => l.ip_address).filter(Boolean))
   if (recentIPs.size > 0 && !recentIPs.has(currentIP) && currentIP !== 'unknown') {
-    reasons.push(`Đăng nhập từ IP mới trong vòng 1 giờ (IP cũ: ${[...recentIPs][0]})`)
+    reasons.push(`Đăng nhập từ IP mới quá nhanh (IP cũ: ${[...recentIPs][0]})`)
   }
 
   const knownIPs = new Set((recentLogs || []).map((l: any) => l.ip_address).filter(Boolean))
   if (currentIP !== 'unknown' && !knownIPs.has(currentIP) && (recentLogs || []).length >= 3) {
     reasons.push(`Địa chỉ IP mới: ${currentIP}`)
+  }
+
+  // Phát hiện thiết bị mới (so sánh chữ ký trình duyệt/thiết bị cơ bản)
+  const knownAgents = new Set((recentLogs || []).map((l: any) => l.user_agent?.split(' ')[0]).filter(Boolean))
+  const currentAgentBase = currentUserAgent.split(' ')[0]
+  if (currentAgentBase && currentAgentBase !== 'unknown' && !knownAgents.has(currentAgentBase)) {
+    reasons.push(`Thiết bị/Trình duyệt mới`)
   }
 
   if (reasons.length > 0) {
@@ -115,7 +123,8 @@ export async function logLoginInternal(userId: string, ip: string, userAgent: st
       authClient,
       userId,
       ip,
-      ipInfo?.country || 'Unknown'
+      ipInfo?.country || 'Unknown',
+      userAgent
     )
 
     const { error: insertError } = await authClient.from('login_logs').insert({
