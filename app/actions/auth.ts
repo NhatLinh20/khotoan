@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
+import { headers } from 'next/headers'
 
 const ZALO_NUMBER = '0812878792'
 const ZALO_LINK = `https://zalo.me/${ZALO_NUMBER}`
@@ -35,6 +36,23 @@ export async function login(formData: FormData) {
     if (profile && profile.role === 'student' && !profile.is_approved) {
       return { error: NOT_APPROVED_MSG }
     }
+
+    // Ghi log đăng nhập (fire-and-forget, không block redirect)
+    const headersList = await headers()
+    const origin = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+    const cookie = headersList.get('cookie') || ''
+    const xForwardedFor = headersList.get('x-forwarded-for') || ''
+    const xRealIp = headersList.get('x-real-ip') || ''
+
+    fetch(`${origin}/api/auth/log-login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        cookie,
+        ...(xForwardedFor && { 'x-forwarded-for': xForwardedFor }),
+        ...(xRealIp && { 'x-real-ip': xRealIp }),
+      },
+    }).catch((err) => console.error('[auth] log-login fetch error:', err))
   }
 
   await revalidatePath('/', 'layout')
