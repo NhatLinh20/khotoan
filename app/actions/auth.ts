@@ -45,7 +45,8 @@ export async function login(formData: FormData) {
       const ip = forwarded ? forwarded.split(',')[0].trim() : (headersList.get('x-real-ip') || 'unknown')
       const userAgent = headersList.get('user-agent') || 'unknown'
 
-      await logLoginInternal(userId, ip, userAgent)
+      const token = authData.session?.access_token
+      await logLoginInternal(userId, ip, userAgent, token)
     } catch (logErr) {
       console.error('[auth] login log error:', logErr)
     }

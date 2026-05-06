@@ -94,24 +94,31 @@ async function detectAnomaly(
   return { isSuspicious: false, reason: null }
 }
 
-export async function logLoginInternal(userId: string, ip: string, userAgent: string, _token?: string) {
+export async function logLoginInternal(userId: string, ip: string, userAgent: string, token?: string) {
   try {
-    // Service role key bypass RLS hoàn toàn - đây là cách chính xác nhất
-    const serviceClient = createServiceClient(
+    // Khởi tạo client với access_token của user để qua RLS (KHÔNG dùng service role key vì dễ lỗi cấu hình)
+    const authClient = createServiceClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      token ? {
+        global: {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      } : undefined
     )
 
     const ipInfo = await getIPInfo(ip)
 
     const { isSuspicious, reason } = await detectAnomaly(
-      serviceClient,
+      authClient,
       userId,
       ip,
       ipInfo?.country || 'Unknown'
     )
 
-    const { error: insertError } = await serviceClient.from('login_logs').insert({
+    const { error: insertError } = await authClient.from('login_logs').insert({
       user_id: userId,
       ip_address: ip,
       country: ipInfo?.country || null,
