@@ -37,11 +37,12 @@ CREATE POLICY "Students read own login logs"
   ON public.login_logs FOR SELECT
   USING (auth.uid() = user_id);
 
--- Server (service role) có thể insert
+-- User tự ghi log của chính mình khi đăng nhập
 DROP POLICY IF EXISTS "Service role insert login logs" ON public.login_logs;
-CREATE POLICY "Service role insert login logs"
+DROP POLICY IF EXISTS "Users insert own login logs" ON public.login_logs;
+CREATE POLICY "Users insert own login logs"
   ON public.login_logs FOR INSERT
-  WITH CHECK (true);
+  WITH CHECK (auth.uid() = user_id);
 
 -- Giáo viên đọc tất cả log
 DROP POLICY IF EXISTS "Teachers read all login logs" ON public.login_logs;

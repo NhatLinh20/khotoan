@@ -4,7 +4,6 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { headers } from 'next/headers'
-import { logLoginInternal } from '@/lib/auth-logger'
 
 const ZALO_NUMBER = '0812878792'
 const ZALO_LINK = `https://zalo.me/${ZALO_NUMBER}`
@@ -38,15 +37,40 @@ export async function login(formData: FormData) {
       return { error: NOT_APPROVED_MSG }
     }
 
-    // Ghi log đăng nhập (fire-and-forget, không block redirect)
-    const headersList = await headers()
-    const forwarded = headersList.get('x-forwarded-for')
-    const ip = forwarded ? forwarded.split(',')[0].trim() : (headersList.get('x-real-ip') || 'unknown')
-    const userAgent = headersList.get('user-agent') || 'unknown'
-    const token = authData.session?.access_token
-    
-    // Đợi ghi log xong mới redirect để tránh Vercel kill function sớm
-    await logLoginInternal(userId, ip, userAgent, token)
+    // Ghi log đăng nhập - dùng trực tiếp supabase client đã có session
+    try {
+      const headersList = await headers()
+      const forwarded = headersList.get('x-forwarded-for')
+      const ip = forwarded ? forwarded.split(',')[0].trim() : (headersList.get('x-real-ip') || 'unknown')
+      const userAgent = headersList.get('user-agent') || 'unknown'
+
+      // Lấy thông tin vị trí IP
+      let country = null, countryCode = null, region = null, city = null, isp = null, timezone = null
+      if (ip && ip !== 'unknown' && !ip.startsWith('127.') && !ip.startsWith('192.168.') && ip !== '::1') {
+        try {
+          const geoRes = await fetch(`http://ip-api.com/json/${ip}?fields=status,country,countryCode,regionName,city,isp,timezone`)
+          if (geoRes.ok) {
+            const geo = await geoRes.json()
+            if (geo.status === 'success') {
+              country = geo.country; countryCode = geo.countryCode
+              region = geo.regionName; city = geo.city
+              isp = geo.isp; timezone = geo.timezone
+            }
+          }
+        } catch { /* bỏ qua lỗi geo */ }
+      }
+
+      await supabase.from('login_logs').insert({
+        user_id: userId,
+        ip_address: ip,
+        country, country_code: countryCode, region, city, isp, timezone,
+        user_agent: userAgent,
+        is_suspicious: false,
+        suspicious_reason: null,
+      })
+    } catch (logErr) {
+      console.error('[auth] login log error:', logErr)
+    }
   }
 
   await revalidatePath('/', 'layout')
