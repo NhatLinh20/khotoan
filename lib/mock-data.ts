@@ -10,6 +10,7 @@ export type Course = {
   student_count: number
   rating: number
   created_at: string
+  exam_type?: string
 }
 
 export type Lesson = {
@@ -28,7 +29,7 @@ export const MOCK_COURSES: Course[] = [
     id: 'c10-ds-1', title: 'Mệnh đề & Tập hợp',
     description: 'Nắm vững nền tảng logic toán học với mệnh đề, phủ định và các phép toán trên tập hợp.',
     grade: 10, topic: 'Đại số & Thống kê', price: 0, thumbnail_url: null,
-    teacher_name: 'Thầy Nguyễn Văn Minh', student_count: 312, rating: 4.8, created_at: '2024-01-01'
+    teacher_name: 'Thầy Nguyễn Văn Minh', student_count: 312, rating: 4.8, created_at: '2024-01-01', exam_type: 'giua_ki_1'
   },
   {
     id: 'c10-ds-2', title: 'Hàm số bậc hai & Đồ thị',
@@ -59,7 +60,7 @@ export const MOCK_COURSES: Course[] = [
     id: 'c10-hh-2', title: 'Tọa độ trong mặt phẳng Oxy',
     description: 'Hệ tọa độ, phương trình đường thẳng, đường tròn và khoảng cách.',
     grade: 10, topic: 'Hình học', price: 199000, thumbnail_url: null,
-    teacher_name: 'Cô Phạm Thị Lan', student_count: 220, rating: 4.9, created_at: '2024-03-15'
+    teacher_name: 'Cô Phạm Thị Lan', student_count: 220, rating: 4.9, created_at: '2024-03-15', exam_type: 'tuyen_sinh_10'
   },
   // Lớp 11 - Đại số
   {
@@ -104,7 +105,7 @@ export const MOCK_COURSES: Course[] = [
     id: 'c12-ds-1', title: 'Khảo sát hàm số',
     description: 'Bảng biến thiên, đồ thị hàm số bậc 3, bậc 4 trùng phương. Chinh phục 9+ THPT QG.',
     grade: 12, topic: 'Đại số & Thống kê', price: 349000, thumbnail_url: null,
-    teacher_name: 'Thầy Nguyễn Văn Minh', student_count: 520, rating: 4.9, created_at: '2024-01-01'
+    teacher_name: 'Thầy Nguyễn Văn Minh', student_count: 520, rating: 4.9, created_at: '2024-01-01', exam_type: 'thpt_qg'
   },
   {
     id: 'c12-ds-2', title: 'Nguyên hàm & Tích phân',
