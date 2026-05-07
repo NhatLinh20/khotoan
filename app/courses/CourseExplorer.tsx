@@ -133,8 +133,8 @@ export default function CourseExplorer({ initialCourses }: { initialCourses: Cou
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const [grade, setGrade] = useState<number | null>(searchParams.get('grade') ? parseInt(searchParams.get('grade')!) : null)
-  const [examType, setExamType] = useState<string | null>(searchParams.get('exam_type') || null)
+  const [grades, setGrades] = useState<number[]>(searchParams.getAll('grade').map(g => parseInt(g)).filter(g => !isNaN(g)))
+  const [examTypes, setExamTypes] = useState<string[]>(searchParams.getAll('exam_type'))
   const [searchQuery, setSearchQuery] = useState('')
   
   // Accordion states
@@ -143,41 +143,49 @@ export default function CourseExplorer({ initialCourses }: { initialCourses: Cou
 
   // Sync state with URL if it changes externally
   useEffect(() => {
-    setGrade(searchParams.get('grade') ? parseInt(searchParams.get('grade')!) : null)
-    setExamType(searchParams.get('exam_type') || null)
+    setGrades(searchParams.getAll('grade').map(g => parseInt(g)).filter(g => !isNaN(g)))
+    setExamTypes(searchParams.getAll('exam_type'))
   }, [searchParams])
 
-  const updateFilters = (newFilters: { grade?: number | null, exam_type?: string | null }) => {
+  const toggleGrade = (g: number | null) => {
     const params = new URLSearchParams(searchParams.toString())
-    
-    if ('grade' in newFilters) {
-      if (newFilters.grade) params.set('grade', String(newFilters.grade))
-      else params.delete('grade')
+    params.delete('grade')
+    if (g !== null) {
+      let newGrades = [...grades]
+      if (newGrades.includes(g)) newGrades = newGrades.filter(x => x !== g)
+      else newGrades.push(g)
+      newGrades.forEach(grade => params.append('grade', String(grade)))
     }
-    
-    if ('exam_type' in newFilters) {
-      if (newFilters.exam_type) params.set('exam_type', newFilters.exam_type)
-      else params.delete('exam_type')
-    }
+    router.push(`/courses?${params.toString()}`, { scroll: false })
+  }
 
+  const toggleExamType = (type: string | null) => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete('exam_type')
+    if (type !== null) {
+      let newTypes = [...examTypes]
+      if (newTypes.includes(type)) newTypes = newTypes.filter(x => x !== type)
+      else newTypes.push(type)
+      newTypes.forEach(t => params.append('exam_type', t))
+    }
     router.push(`/courses?${params.toString()}`, { scroll: false })
   }
 
   const clearFilters = () => {
-    setGrade(null)
-    setExamType(null)
+    setGrades([])
+    setExamTypes([])
     setSearchQuery('')
     router.push('/courses', { scroll: false })
   }
 
   const filteredCourses = useMemo(() => {
     return initialCourses.filter((c) => {
-      if (grade && c.grade !== grade) return false
-      if (examType && c.exam_type !== examType) return false
+      if (grades.length > 0 && !grades.includes(c.grade)) return false
+      if (examTypes.length > 0 && (!c.exam_type || !examTypes.includes(c.exam_type))) return false
       if (searchQuery && !c.title.toLowerCase().includes(searchQuery.toLowerCase())) return false
       return true
     })
-  }, [initialCourses, grade, examType, searchQuery])
+  }, [initialCourses, grades, examTypes, searchQuery])
 
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-6 py-8 relative flex flex-col md:flex-row gap-6 lg:gap-8 items-start">
@@ -195,24 +203,22 @@ export default function CourseExplorer({ initialCourses }: { initialCourses: Cou
             <div className="flex flex-col gap-1 pb-2">
               <label className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 cursor-pointer transition-colors group">
                 <input 
-                  type="radio" 
-                  name="grade"
-                  checked={grade === null}
-                  onChange={() => updateFilters({ grade: null })}
-                  className="w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded-full"
+                  type="checkbox" 
+                  checked={grades.length === 0}
+                  onChange={() => toggleGrade(null)}
+                  className="w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded"
                 />
-                <span className={`text-sm font-medium ${grade === null ? 'text-primary font-bold' : 'text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white'}`}>Tất cả</span>
+                <span className={`text-sm font-medium ${grades.length === 0 ? 'text-primary font-bold' : 'text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white'}`}>Tất cả</span>
               </label>
               {GRADES.map(g => (
                 <label key={g} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 cursor-pointer transition-colors group">
                   <input 
-                    type="radio" 
-                    name="grade"
-                    checked={grade === g}
-                    onChange={() => updateFilters({ grade: g })}
-                    className="w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded-full"
+                    type="checkbox" 
+                    checked={grades.includes(g)}
+                    onChange={() => toggleGrade(g)}
+                    className="w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded"
                   />
-                  <span className={`text-sm font-medium ${grade === g ? 'text-primary font-bold' : 'text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white'}`}>Lớp {g}</span>
+                  <span className={`text-sm font-medium ${grades.includes(g) ? 'text-primary font-bold' : 'text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white'}`}>Lớp {g}</span>
                 </label>
               ))}
             </div>
@@ -223,24 +229,22 @@ export default function CourseExplorer({ initialCourses }: { initialCourses: Cou
             <div className="flex flex-col gap-1 pb-2">
               <label className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 cursor-pointer transition-colors group">
                 <input 
-                  type="radio" 
-                  name="exam_type"
-                  checked={examType === null}
-                  onChange={() => updateFilters({ exam_type: null })}
-                  className="w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded-full"
+                  type="checkbox" 
+                  checked={examTypes.length === 0}
+                  onChange={() => toggleExamType(null)}
+                  className="w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded"
                 />
-                <span className={`text-sm font-medium ${examType === null ? 'text-primary font-bold' : 'text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white'}`}>Tất cả</span>
+                <span className={`text-sm font-medium ${examTypes.length === 0 ? 'text-primary font-bold' : 'text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white'}`}>Tất cả</span>
               </label>
               {EXAM_TYPES.map(type => (
                 <label key={type.value} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 cursor-pointer transition-colors group">
                   <input 
-                    type="radio" 
-                    name="exam_type"
-                    checked={examType === type.value}
-                    onChange={() => updateFilters({ exam_type: type.value })}
-                    className="w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded-full"
+                    type="checkbox" 
+                    checked={examTypes.includes(type.value)}
+                    onChange={() => toggleExamType(type.value)}
+                    className="w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded"
                   />
-                  <span className={`text-sm font-medium ${examType === type.value ? 'text-primary font-bold' : 'text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white'}`}>{type.label}</span>
+                  <span className={`text-sm font-medium ${examTypes.includes(type.value) ? 'text-primary font-bold' : 'text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white'}`}>{type.label}</span>
                 </label>
               ))}
             </div>
@@ -251,7 +255,7 @@ export default function CourseExplorer({ initialCourses }: { initialCourses: Cou
           <p className="text-sm font-bold text-gray-900 dark:text-white mb-3 text-center">
             Hiển thị <span className="text-primary">{filteredCourses.length}</span> khóa học
           </p>
-          {(grade || examType || searchQuery) ? (
+          {(grades.length > 0 || examTypes.length > 0 || searchQuery) ? (
             <button 
               onClick={clearFilters}
               className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 dark:bg-red-500/10 dark:hover:bg-red-500/20 dark:text-red-400 rounded-xl transition-colors"
