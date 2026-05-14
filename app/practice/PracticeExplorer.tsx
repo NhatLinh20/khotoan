@@ -5,7 +5,15 @@ import Link from 'next/link'
 import { BookOpen, Clock, FileText, Database, ChevronRight, Search, SlidersHorizontal } from 'lucide-react'
 
 const GRADE_OPTS = [6,7,8,9,10,11,12]
-const SUBJECT_MAP: Record<string,string> = { D: 'Đại số', H: 'Hình học', C: 'Chuyên đề' }
+const EXAM_TYPE_MAP: Record<string,string> = { 
+ kiem_tra_thuong_xuyen: 'Kiểm tra thường xuyên', 
+ giua_ki_1: 'Giữa kì 1', 
+ cuoi_ki_1: 'Cuối kì 1', 
+ giua_ki_2: 'Giữa kì 2', 
+ cuoi_ki_2: 'Cuối kì 2', 
+ tuyen_sinh_10: 'Tuyển sinh 10', 
+ thpt_qg: 'Thi tốt nghiệp THPT' 
+}
 
 type Exam = {
  id: string
@@ -63,8 +71,8 @@ export default function PracticeExplorer({ exams }: { exams: Exam[] }) {
  <div className="flex flex-wrap items-center gap-2 w-full">
  <select value={subject} onChange={e => setSubject(e.target.value)}
  className="px-3 py-2 bg-neutral border border-secondary/20 rounded-md text-sm font-bold text-primary outline-none cursor-pointer">
- <option value="">Tất cả môn</option>
- {Object.entries(SUBJECT_MAP).map(([v,l]) => <option key={v} value={v}>{l}</option>)}
+ <option value="">Tất cả loại đề thi</option>
+ {Object.entries(EXAM_TYPE_MAP).map(([v,l]) => <option key={v} value={v}>{l}</option>)}
  </select>
  <select value={type} onChange={e => setType(e.target.value)}
  className="px-3 py-2 bg-neutral border border-secondary/20 rounded-md text-sm font-bold text-primary outline-none cursor-pointer">
@@ -109,7 +117,7 @@ export default function PracticeExplorer({ exams }: { exams: Exam[] }) {
  Lớp {exam.grade}
  </span>
  <span className="bg-neutral text-secondary border border-secondary/20 text-[0.78rem] font-display font-bold px-2 py-0.5 rounded-sm shrink-0">
- {SUBJECT_MAP[exam.subject] ?? exam.subject}
+ {EXAM_TYPE_MAP[exam.subject] ?? exam.subject}
  </span>
  <span className={`flex items-center gap-1 text-[0.78rem] font-display font-bold px-2 py-0.5 rounded-sm shrink-0 ${exam.exam_type === 'pdf' ? 'bg-secondary/10 text-secondary' : 'bg-tertiary/10 text-tertiary'}`}>
  {exam.exam_type === 'pdf' ? <FileText size={10} /> : <Database size={10} />}
