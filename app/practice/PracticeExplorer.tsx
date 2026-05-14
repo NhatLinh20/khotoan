@@ -44,17 +44,7 @@ export default function PracticeExplorer({ exams }: { exams: Exam[] }) {
 
  return (
  <div className="min-h-screen bg-neutral text-primary font-body">
- {/* Hero Banner */}
- <div className="bg-surface border-b border-secondary/20">
- <div className="max-w-6xl mx-auto px-4 md:px-6 py-6 md:py-8">
- <h1 className="text-2xl md:text-3xl font-display font-bold text-primary">
- Luyện thi <span className="text-tertiary italic">Toán học</span>
- </h1>
- <p className="text-secondary text-sm mt-1">
- {exams.length} đề thi đang mở — chọn đề và bắt đầu luyện tập ngay
- </p>
- </div>
- </div>
+
 
  <div className="max-w-6xl mx-auto px-4 md:px-6 py-6 md:py-8 space-y-5">
  {/* Filter Bar */}
