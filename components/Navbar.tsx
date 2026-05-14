@@ -23,6 +23,7 @@ export default function Navbar({ user, profile }: NavbarProps) {
  ...(isPending
  ? []
  : [
+ { href: '/dashboard', label: 'Dashboard', icon: <UserIcon size={18} /> },
  { href: '/courses', label: 'Khóa học', icon: <BookOpen size={18} /> },
  { href: '/practice', label: 'Luyện thi', icon: <GraduationCap size={18} /> },
 ]),
