@@ -24,6 +24,9 @@ const EXAM_TYPE_OPTS = [
  { v: 'tuyen_sinh_10', l: 'Tuyển sinh 10' },
  { v: 'thpt_qg', l: 'Thi tốt nghiệp THPT' },
 ]
+const SUBJECT_OPTS = [
+ { v: 'D', l: 'Đại số' }, { v: 'H', l: 'Hình học' }, { v: 'C', l: 'Chuyên đề' },
+]
 const DIFF_OPTS = [
  { v: 'N', l: 'Nhận biết' }, { v: 'H', l: 'Thông hiểu' }, { v: 'V', l: 'Vận dụng' }, { v: 'C', l: 'Vận dụng cao' },
 ]
@@ -370,8 +373,8 @@ export default function ExamBankBuilder({ initialExamId, initialData }: Props) {
  </select>
  <select value={filterSubject} onChange={e => { setFilterSubject(e.target.value); setFilterChapter(''); setFilterLesson(''); setFilterForm('') }}
  className="px-2 py-1.5 bg-neutral border border-secondary/20 rounded-lg text-xs text-primary focus:outline-none focus:ring-2 focus:ring-primary/20">
- <option value="">Tất cả loại đề thi</option>
- {EXAM_TYPE_OPTS.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
+ <option value="">Tất cả các môn</option>
+ {SUBJECT_OPTS.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
  </select>
  <select value={filterChapter} onChange={e => { setFilterChapter(e.target.value); setFilterLesson(''); setFilterForm('') }}
  className="px-2 py-1.5 bg-neutral border border-secondary/20 rounded-lg text-xs text-primary focus:outline-none focus:ring-2 focus:ring-primary/20">
