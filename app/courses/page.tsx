@@ -15,36 +15,6 @@ export default async function CoursesPage() {
 
  return (
  <div className="min-h-screen bg-neutral">
- {/* Header Banner - Modern Design */}
- <div className="bg-surface border-b border-secondary/20">
- <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8">
- <div className="flex flex-col gap-3">
- {/* Breadcrumb */}
- <nav className="flex text-sm text-secondary font-medium">
- <ol className="flex items-center gap-2">
- <li>
- <a href="/" className="hover:text-primary transition-colors">Trang chủ</a>
- </li>
- <li>
- <span className="text-secondary/50">/</span>
- </li>
- <li>
- <span className="text-primary font-bold">Khóa học</span>
- </li>
- </ol>
- </nav>
- 
- <div>
- <h1 className="text-3xl md:text-4xl font-display font-bold text-primary tracking-tight">
- Khóa học Toán
- </h1>
- <p className="text-sm md:text-[0.95rem] text-secondary mt-2 max-w-2xl font-medium leading-[1.55]">
- Hệ thống bài giảng, đề thi và luyện tập chuyên sâu cho học sinh từ lớp 6 đến lớp 12. Được thiết kế tối ưu giúp nắm vững kiến thức và tự tin chinh phục mọi kỳ thi.
- </p>
- </div>
- </div>
- </div>
- </div>
 
  <Suspense fallback={<CoursesSkeleton />}>
  <CourseExplorer initialCourses={allCourses} />

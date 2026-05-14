@@ -242,27 +242,6 @@ export default function CourseExplorer({ initialCourses }: { initialCourses: Cou
  {/* MAIN CONTENT: DANH SÁCH KHÓA HỌC (Right Column) */}
  <main className="flex-1 w-full min-w-0">
  
- {/* Search Bar */}
- <div className="bg-surface rounded-lg border border-secondary/20 shadow-sm p-2 mb-6">
- <div className="relative w-full flex items-center">
- <Search className="absolute left-4 text-secondary" size={18} />
- <input 
- type="text"
- placeholder="Tìm kiếm khóa học theo tên..."
- value={searchQuery}
- onChange={(e) => setSearchQuery(e.target.value)}
- className="w-full pl-11 pr-4 py-3 bg-transparent border-none text-[0.95rem] focus:ring-0 outline-none text-primary font-medium placeholder-secondary/50"
- />
- {searchQuery && (
- <button 
- onClick={() => setSearchQuery('')}
- className="absolute right-4 p-1 rounded-full bg-neutral hover:bg-secondary/10 text-secondary transition-colors"
- >
- <X size={14} />
- </button>
- )}
- </div>
- </div>
 
  {/* Grid Courses */}
  {filteredCourses.length > 0 ? (
