@@ -15,8 +15,14 @@ const GRADE_OPTS = [
  { v: 6, l: 'Lớp 6' }, { v: 7, l: 'Lớp 7' }, { v: 8, l: 'Lớp 8' }, { v: 9, l: 'Lớp 9' },
  { v: 10, l: 'Lớp 10' }, { v: 11, l: 'Lớp 11' }, { v: 12, l: 'Lớp 12' },
 ]
-const SUBJECT_OPTS = [
- { v: 'D', l: 'Đại số' }, { v: 'H', l: 'Hình học' }, { v: 'C', l: 'Chuyên đề' },
+const EXAM_TYPE_OPTS = [
+ { v: 'kiem_tra_thuong_xuyen', l: 'Kiểm tra thường xuyên' },
+ { v: 'giua_ki_1', l: 'Giữa kì 1' },
+ { v: 'cuoi_ki_1', l: 'Cuối kì 1' },
+ { v: 'giua_ki_2', l: 'Giữa kì 2' },
+ { v: 'cuoi_ki_2', l: 'Cuối kì 2' },
+ { v: 'tuyen_sinh_10', l: 'Tuyển sinh 10' },
+ { v: 'thpt_qg', l: 'Thi tốt nghiệp THPT' },
 ]
 const DIFF_OPTS = [
  { v: 'N', l: 'Nhận biết' }, { v: 'H', l: 'Thông hiểu' }, { v: 'V', l: 'Vận dụng' }, { v: 'C', l: 'Vận dụng cao' },
@@ -68,7 +74,7 @@ export default function ExamBankBuilder({ initialExamId, initialData }: Props) {
  const [title, setTitle] = useState(initialData?.title ?? '')
  const [desc, setDesc] = useState(initialData?.description ?? '')
  const [grade, setGrade] = useState<number>(initialData?.grade ?? 10)
- const [subject, setSubject] = useState(initialData?.subject ?? 'D')
+ const [subject, setSubject] = useState(initialData?.subject ?? 'kiem_tra_thuong_xuyen')
  const [duration, setDuration] = useState(initialData?.duration_min ?? 45)
 
  // Search / filter for question bank
@@ -239,9 +245,9 @@ export default function ExamBankBuilder({ initialExamId, initialData }: Props) {
  </select>
  </div>
  <div>
- <label className={labelCls}>Môn học</label>
+ <label className={labelCls}>Loại đề thi</label>
  <select value={subject} onChange={e => setSubject(e.target.value)} className={inputCls}>
- {SUBJECT_OPTS.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
+ {EXAM_TYPE_OPTS.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
  </select>
  </div>
  </div>
@@ -364,8 +370,8 @@ export default function ExamBankBuilder({ initialExamId, initialData }: Props) {
  </select>
  <select value={filterSubject} onChange={e => { setFilterSubject(e.target.value); setFilterChapter(''); setFilterLesson(''); setFilterForm('') }}
  className="px-2 py-1.5 bg-neutral border border-secondary/20 rounded-lg text-xs text-primary focus:outline-none focus:ring-2 focus:ring-primary/20">
- <option value="">Tất cả môn</option>
- {SUBJECT_OPTS.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
+ <option value="">Tất cả loại đề thi</option>
+ {EXAM_TYPE_OPTS.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
  </select>
  <select value={filterChapter} onChange={e => { setFilterChapter(e.target.value); setFilterLesson(''); setFilterForm('') }}
  className="px-2 py-1.5 bg-neutral border border-secondary/20 rounded-lg text-xs text-primary focus:outline-none focus:ring-2 focus:ring-primary/20">

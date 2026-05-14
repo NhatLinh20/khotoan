@@ -14,7 +14,15 @@ const GRADE_OPTS = [
  { v: 6, l: 'Lớp 6' }, { v: 7, l: 'Lớp 7' }, { v: 8, l: 'Lớp 8' }, { v: 9, l: 'Lớp 9' },
  { v: 10, l: 'Lớp 10' }, { v: 11, l: 'Lớp 11' }, { v: 12, l: 'Lớp 12' },
 ]
-const SUBJECT_OPTS = [{ v: 'D', l: 'Đại số' }, { v: 'H', l: 'Hình học' }, { v: 'C', l: 'Chuyên đề' }]
+const EXAM_TYPE_OPTS = [
+ { v: 'kiem_tra_thuong_xuyen', l: 'Kiểm tra thường xuyên' },
+ { v: 'giua_ki_1', l: 'Giữa kì 1' },
+ { v: 'cuoi_ki_1', l: 'Cuối kì 1' },
+ { v: 'giua_ki_2', l: 'Giữa kì 2' },
+ { v: 'cuoi_ki_2', l: 'Cuối kì 2' },
+ { v: 'tuyen_sinh_10', l: 'Tuyển sinh 10' },
+ { v: 'thpt_qg', l: 'Thi tốt nghiệp THPT' },
+]
 const TYPE_OPTS = [
  { v: 'mc', l: 'Trắc nghiệm (MC)' }, { v: 'tf', l: 'Đúng/Sai (TF)' },
  { v: 'short', l: 'Trả lời ngắn' }, { v: 'essay', l: 'Tự luận' },
@@ -82,7 +90,7 @@ export default function ExamPdfBuilder({ initialExamId, initialData }: PdfBuilde
  const [title, setTitle] = useState(initialData?.title ?? '')
  const [desc, setDesc] = useState(initialData?.description ?? '')
  const [grade, setGrade] = useState<number>(initialData?.grade ?? 10)
- const [subject, setSubject] = useState(initialData?.subject ?? 'D')
+ const [subject, setSubject] = useState(initialData?.subject ?? 'kiem_tra_thuong_xuyen')
  const [duration, setDuration] = useState(initialData?.duration_min ?? 45)
 
  // Step 2 — PDF
@@ -232,9 +240,9 @@ export default function ExamPdfBuilder({ initialExamId, initialData }: PdfBuilde
  </select>
  </div>
  <div>
- <label className={labelCls}>Môn học</label>
+ <label className={labelCls}>Loại đề thi</label>
  <select value={subject} onChange={e => setSubject(e.target.value)} className={inputCls}>
- {SUBJECT_OPTS.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
+ {EXAM_TYPE_OPTS.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
  </select>
  </div>
  <div>
@@ -503,7 +511,7 @@ export default function ExamPdfBuilder({ initialExamId, initialData }: PdfBuilde
  {[
  ['Tên đề thi', title],
  ['Khối lớp', GRADE_OPTS.find(o => o.v === grade)?.l ?? ''],
- ['Môn học', SUBJECT_OPTS.find(o => o.v === subject)?.l ?? ''],
+ ['Loại đề thi', EXAM_TYPE_OPTS.find(o => o.v === subject)?.l ?? ''],
  ['Thời gian',`${duration} phút`],
  ['Số câu',`${rows.length} câu`],
  ['Tổng điểm',`${totalScore.toFixed(2)} điểm`],

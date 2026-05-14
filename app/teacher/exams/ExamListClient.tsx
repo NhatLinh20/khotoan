@@ -26,8 +26,14 @@ const GRADE_LABEL: Record<number, string> = {
  6: 'Lớp 6', 7: 'Lớp 7', 8: 'Lớp 8', 9: 'Lớp 9',
  10: 'Lớp 10', 11: 'Lớp 11', 12: 'Lớp 12'
 }
-const SUBJECT_LABEL: Record<string, string> = {
- D: 'Đại số', H: 'Hình học', C: 'Chuyên đề'
+const EXAM_TYPE_LABEL: Record<string, string> = {
+ kiem_tra_thuong_xuyen: 'Kiểm tra thường xuyên',
+ giua_ki_1: 'Giữa kì 1',
+ cuoi_ki_1: 'Cuối kì 1',
+ giua_ki_2: 'Giữa kì 2',
+ cuoi_ki_2: 'Cuối kì 2',
+ tuyen_sinh_10: 'Tuyển sinh 10',
+ thpt_qg: 'Thi tốt nghiệp THPT',
 }
 
 export default function ExamListClient({ initialExams }: { initialExams: Exam[] }) {
@@ -83,7 +89,7 @@ export default function ExamListClient({ initialExams }: { initialExams: Exam[] 
  <tr className="bg-neutral/80 border-b border-secondary/20">
  <th className="px-4 py-3 text-left text-[11px] font-display font-bold text-secondary/80 uppercase tracking-wider">Tên đề</th>
  <th className="px-4 py-3 text-left text-[11px] font-display font-bold text-secondary/80 uppercase tracking-wider w-20">Lớp</th>
- <th className="px-4 py-3 text-left text-[11px] font-display font-bold text-secondary/80 uppercase tracking-wider w-24">Môn</th>
+ <th className="px-4 py-3 text-left text-[11px] font-display font-bold text-secondary/80 uppercase tracking-wider w-24">Loại đề</th>
  <th className="px-4 py-3 text-center text-[11px] font-display font-bold text-secondary/80 uppercase tracking-wider w-20">Số câu</th>
  <th className="px-4 py-3 text-center text-[11px] font-display font-bold text-secondary/80 uppercase tracking-wider w-20">Phút</th>
  <th className="px-4 py-3 text-center text-[11px] font-display font-bold text-secondary/80 uppercase tracking-wider w-24">Loại</th>
@@ -112,7 +118,7 @@ export default function ExamListClient({ initialExams }: { initialExams: Exam[] 
  {exam.grade ? GRADE_LABEL[exam.grade] ??`Lớp ${exam.grade}` : '—'}
  </td>
  <td className="px-4 py-3 text-secondary text-xs font-bold">
- {exam.subject ? SUBJECT_LABEL[exam.subject] ?? exam.subject : '—'}
+ {exam.subject ? EXAM_TYPE_LABEL[exam.subject] ?? exam.subject : '—'}
  </td>
  <td className="px-4 py-3 text-center">
  <span className="inline-flex items-center gap-1 text-xs font-bold text-gray-700">
