@@ -48,8 +48,8 @@ export default function PracticeExplorer({ exams }: { exams: Exam[] }) {
 
  <div className="max-w-6xl mx-auto px-4 md:px-6 py-6 md:py-8 space-y-5">
  {/* Filter Bar */}
- <div className="bg-surface rounded-lg border border-secondary/20 shadow-sm p-4 flex flex-col md:flex-row items-start md:items-center gap-4">
- <div className="relative w-full md:w-64 shrink-0">
+ <div className="bg-surface rounded-lg border border-secondary/20 shadow-sm p-4 flex flex-col xl:flex-row items-start xl:items-center gap-4 overflow-hidden">
+ <div className="relative w-full xl:w-64 shrink-0">
  <input
  placeholder="Tìm đề thi..."
  value={search}
@@ -58,30 +58,30 @@ export default function PracticeExplorer({ exams }: { exams: Exam[] }) {
  />
  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-secondary" size={16} />
  </div>
- <div className="flex flex-wrap items-center gap-2 w-full">
+ <div className="flex items-center gap-2 w-full overflow-x-auto custom-scrollbar pb-2 xl:pb-0">
  <select value={subject} onChange={e => setSubject(e.target.value)}
- className="px-3 py-2 bg-neutral border border-secondary/20 rounded-md text-sm font-bold text-primary outline-none cursor-pointer">
+ className="px-3 py-2 bg-neutral border border-secondary/20 rounded-md text-sm font-bold text-primary outline-none cursor-pointer shrink-0">
  <option value="">Tất cả loại đề thi</option>
  {Object.entries(EXAM_TYPE_MAP).map(([v,l]) => <option key={v} value={v}>{l}</option>)}
  </select>
  <select value={type} onChange={e => setType(e.target.value)}
- className="px-3 py-2 bg-neutral border border-secondary/20 rounded-md text-sm font-bold text-primary outline-none cursor-pointer">
+ className="px-3 py-2 bg-neutral border border-secondary/20 rounded-md text-sm font-bold text-primary outline-none cursor-pointer shrink-0">
  <option value="">Tất cả loại</option>
  <option value="pdf">Đề PDF</option>
  <option value="bank">Ngân hàng câu hỏi</option>
  </select>
- <div className="w-px h-6 bg-secondary/20 mx-1 hidden md:block" />
- <div className="flex flex-wrap gap-1.5">
+ <div className="w-px h-6 bg-secondary/20 mx-1 hidden xl:block shrink-0" />
+ <div className="flex items-center gap-1.5 shrink-0">
  {GRADE_OPTS.map(g => (
  <button key={g} onClick={() => setGrade(grade === g ? null : g)}
- className={`px-2.5 py-1.5 rounded-sm font-display text-[0.78rem] tracking-[0.14em] uppercase font-bold transition-all ${grade === g ? 'bg-primary text-surface' : 'bg-neutral text-secondary hover:bg-primary/10 hover:text-primary'}`}>
+ className={`px-2.5 py-1.5 rounded-sm font-display text-[0.78rem] tracking-[0.14em] uppercase font-bold transition-all whitespace-nowrap ${grade === g ? 'bg-primary text-surface' : 'bg-neutral text-secondary hover:bg-primary/10 hover:text-primary'}`}>
  Lớp {g}
  </button>
  ))}
  </div>
  {hasFilter && (
  <button onClick={() => { setGrade(null); setSubject(''); setType(''); setSearch('') }}
- className="px-2.5 py-1.5 text-[0.78rem] font-display font-bold text-tertiary uppercase tracking-[0.14em] bg-tertiary/10 hover:bg-tertiary/20 rounded-sm transition-colors">
+ className="px-2.5 py-1.5 text-[0.78rem] font-display font-bold text-tertiary uppercase tracking-[0.14em] bg-tertiary/10 hover:bg-tertiary/20 rounded-sm transition-colors shrink-0 whitespace-nowrap">
  Xóa lọc ×
  </button>
  )}
