@@ -30,17 +30,15 @@ export default function PracticeExplorer({ exams }: { exams: Exam[] }) {
  const [search, setSearch] = useState('')
  const [grade, setGrade] = useState<number | null>(null)
  const [subject, setSubject] = useState('')
- const [type, setType] = useState('')
 
  const filtered = useMemo(() => exams.filter(e => {
  if (grade && e.grade !== grade) return false
  if (subject && e.subject !== subject) return false
- if (type && e.exam_type !== type) return false
  if (search && !e.title.toLowerCase().includes(search.toLowerCase())) return false
  return true
- }), [exams, grade, subject, type, search])
+ }), [exams, grade, subject, search])
 
- const hasFilter = grade || subject || type || search
+ const hasFilter = grade || subject || search
 
  return (
  <div className="min-h-screen bg-neutral text-primary font-body">
@@ -64,12 +62,6 @@ export default function PracticeExplorer({ exams }: { exams: Exam[] }) {
  <option value="">Tất cả loại đề thi</option>
  {Object.entries(EXAM_TYPE_MAP).map(([v,l]) => <option key={v} value={v}>{l}</option>)}
  </select>
- <select value={type} onChange={e => setType(e.target.value)}
- className="px-3 py-2 bg-neutral border border-secondary/20 rounded-md text-sm font-bold text-primary outline-none cursor-pointer shrink-0">
- <option value="">Tất cả loại</option>
- <option value="pdf">Đề PDF</option>
- <option value="bank">Ngân hàng câu hỏi</option>
- </select>
  <div className="w-px h-6 bg-secondary/20 mx-1 hidden xl:block shrink-0" />
  <div className="flex items-center gap-1.5 shrink-0">
  {GRADE_OPTS.map(g => (
@@ -80,7 +72,7 @@ export default function PracticeExplorer({ exams }: { exams: Exam[] }) {
  ))}
  </div>
  {hasFilter && (
- <button onClick={() => { setGrade(null); setSubject(''); setType(''); setSearch('') }}
+ <button onClick={() => { setGrade(null); setSubject(''); setSearch('') }}
  className="px-2.5 py-1.5 text-[0.78rem] font-display font-bold text-tertiary uppercase tracking-[0.14em] bg-tertiary/10 hover:bg-tertiary/20 rounded-sm transition-colors shrink-0 whitespace-nowrap">
  Xóa lọc ×
  </button>
