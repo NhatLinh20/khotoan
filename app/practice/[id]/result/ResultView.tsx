@@ -171,7 +171,7 @@ export default function ResultView({
  localStorage.removeItem(`practice_${exam.id}_${userId}`)
  localStorage.removeItem(`result_${exam.id}_${userId}`)
  } catch {}
- }, [saved, questions.length])
+ }, [saved, questions.length, totalScore, timeSpent, userId, exam.id])
 
  const grade = pct >= 90 ? 'Xuất sắc' : pct >= 70 ? 'Khá' : pct >= 50 ? 'Trung bình' : 'Cần cố gắng'
  const gradeColor = pct >= 90 ? 'text-emerald-500' : pct >= 70 ? 'text-blue-500' : pct >= 50 ? 'text-amber-500' : 'text-tertiary'
