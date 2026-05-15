@@ -59,13 +59,32 @@ export default async function ExamDetailPage({
 
  // Fetch student results (dùng admin client để bypass RLS)
  const adminSupabase = createAdminClient()
- const { data: rawResults } = await adminSupabase
+ const { data: rawResults, error: resultsError } = await adminSupabase
    .from('exam_results')
-   .select('id, user_id, score, total_questions, time_spent_seconds, created_at, profiles(full_name, grade, email)')
+   .select('id, user_id, score, total_questions, time_spent_seconds, created_at')
    .eq('exam_id', id)
    .order('score', { ascending: false })
 
- const studentResults = (rawResults ?? []) as any[]
+ if (resultsError) console.error('[exam_results fetch error]', resultsError)
+
+ const baseResults = rawResults ?? []
+
+ // Fetch profiles riêng theo danh sách user_id
+ const userIds = [...new Set(baseResults.map((r: any) => r.user_id))]
+ const { data: profilesData } = userIds.length > 0
+   ? await adminSupabase
+       .from('profiles')
+       .select('id, full_name, email, grade')
+       .in('id', userIds)
+   : { data: [] }
+
+ const profileMap = Object.fromEntries((profilesData ?? []).map((p: any) => [p.id, p]))
+
+ const studentResults = baseResults.map((r: any) => ({
+   ...r,
+   profiles: profileMap[r.user_id] ?? null,
+ })) as any[]
+
  const resultCount = studentResults.length
  const avgScore = resultCount > 0
    ? studentResults.reduce((s: number, r: any) => s + (r.score ?? 0), 0) / resultCount
