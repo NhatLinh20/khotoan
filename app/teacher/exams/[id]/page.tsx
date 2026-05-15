@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -56,8 +57,9 @@ export default async function ExamDetailPage({
  const questions = examQs ?? []
  const totalScore = questions.reduce((s: number, q: any) => s + (q.max_score ?? 0), 0)
 
- // Fetch student results
- const { data: rawResults } = await supabase
+ // Fetch student results (dùng admin client để bypass RLS)
+ const adminSupabase = createAdminClient()
+ const { data: rawResults } = await adminSupabase
    .from('exam_results')
    .select('id, user_id, score, total_questions, time_spent_seconds, created_at, profiles(full_name, grade, email)')
    .eq('exam_id', id)
