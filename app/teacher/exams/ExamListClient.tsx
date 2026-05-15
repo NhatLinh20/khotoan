@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import {
  Plus, FileText, Database, Pencil, Trash2,
  Globe, EyeOff, ChevronRight, Clock, BookOpen,
- X, LayoutGrid
+ X, LayoutGrid, BarChart2
 } from 'lucide-react'
 import { deleteExam, publishExam } from '@/app/actions/exams'
 
@@ -152,6 +152,13 @@ export default function ExamListClient({ initialExams }: { initialExams: Exam[] 
  </td>
  <td className="px-4 py-3">
  <div className="flex items-center justify-center gap-1.5">
+ <Link
+ href={`/teacher/exams/${exam.id}`}
+ className="p-1.5 rounded-lg bg-violet-50 text-violet-600 hover:bg-violet-100 transition-colors"
+ title="Xem kết quả học sinh"
+ >
+ <BarChart2 size={13} />
+ </Link>
  <Link
  href={`/teacher/exams/${exam.id}/edit`}
  className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 :bg-blue-900/40 transition-colors"
