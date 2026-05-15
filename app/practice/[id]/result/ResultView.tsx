@@ -118,6 +118,7 @@ export default function ResultView({
  const [answers, setAnswers] = useState<Record<string, StudentAnswer>>({})
  const [timeSpent, setTimeSpent] = useState(0)
  const [saved, setSaved] = useState(false)
+ const [isLoaded, setIsLoaded] = useState(false)
  const [error, setError] = useState<string | null>(null)
 
  // Load from localStorage
@@ -134,7 +135,9 @@ export default function ResultView({
  const answerData = localStorage.getItem(storageKey)
  if (answerData) setAnswers(JSON.parse(answerData))
  }
- } catch {}
+ } catch {} finally {
+ setIsLoaded(true)
+ }
  }, [exam.id, userId])
 
  // Compute scores
@@ -153,16 +156,16 @@ export default function ResultView({
 
  // Save to DB once
  useEffect(() => {
- if (saved || questions.length === 0) return
+ if (!isLoaded || saved || questions.length === 0) return
  const supabase = createClient()
  supabase.from('exam_results').insert({
  user_id: userId,
  exam_id: exam.id,
  score: totalScore,
  total_questions: questions.length,
-        time_spent_seconds: timeSpent,
-        detail_answers: answers,
-      }).then(({ error: e }) => {
+ time_spent_seconds: timeSpent,
+ detail_answers: answers,
+ }).then(({ error: e }) => {
  if (e) setError(e.message)
  setSaved(true)
  })
@@ -172,7 +175,7 @@ export default function ResultView({
  localStorage.removeItem(`practice_${exam.id}_${userId}`)
  localStorage.removeItem(`result_${exam.id}_${userId}`)
  } catch {}
- }, [saved, questions.length, totalScore, timeSpent, userId, exam.id])
+ }, [isLoaded, saved, questions.length, totalScore, timeSpent, userId, exam.id, answers])
 
  const grade = pct >= 90 ? 'Xuất sắc' : pct >= 70 ? 'Khá' : pct >= 50 ? 'Trung bình' : 'Cần cố gắng'
  const gradeColor = pct >= 90 ? 'text-emerald-500' : pct >= 70 ? 'text-blue-500' : pct >= 50 ? 'text-amber-500' : 'text-tertiary'
