@@ -274,7 +274,6 @@ export default async function ExamDetailPage({
  </div>
  )}
  </div>
- </div>
 
   {/* ── Student Results Section ── */}
   <div className="space-y-4">
