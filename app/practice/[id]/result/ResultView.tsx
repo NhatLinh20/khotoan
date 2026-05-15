@@ -160,8 +160,9 @@ export default function ResultView({
  exam_id: exam.id,
  score: totalScore,
  total_questions: questions.length,
- time_spent_seconds: timeSpent,
- }).then(({ error: e }) => {
+        time_spent_seconds: timeSpent,
+        detail_answers: answers,
+      }).then(({ error: e }) => {
  if (e) setError(e.message)
  setSaved(true)
  })

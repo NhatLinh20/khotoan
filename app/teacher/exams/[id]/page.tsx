@@ -4,9 +4,10 @@ import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import {
  ArrowLeft, FileText, Database, Globe, EyeOff,
- Clock, BookOpen, Pencil, Download, Users, Trophy, TrendingUp, Award
+ Clock, BookOpen, Pencil, Download, Users, Trophy, TrendingUp, Award, ExternalLink
 } from 'lucide-react'
 import ExamPublishButton from './ExamPublishButton'
+import ExportResultsButton from './ExportResultsButton'
 
 const GRADE_LABEL: Record<number, string> = {
  6: 'Lớp 6', 7: 'Lớp 7', 8: 'Lớp 8', 9: 'Lớp 9',
@@ -325,9 +326,12 @@ export default async function ExamDetailPage({
           <Users size={16} className="text-primary" />
           Danh sách kết quả học sinh
         </h2>
-        <span className="text-xs font-display font-bold text-secondary bg-neutral px-3 py-1 rounded-md border border-secondary/20">
-          {resultCount} lượt nộp
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-display font-bold text-secondary bg-neutral px-3 py-1.5 rounded-md border border-secondary/20">
+            {resultCount} lượt nộp
+          </span>
+          <ExportResultsButton results={studentResults} totalScore={totalScore} />
+        </div>
       </div>
 
       {resultCount === 0 ? (
@@ -348,6 +352,7 @@ export default async function ExamDetailPage({
                 <th className="px-4 py-3 text-center text-[10px] font-display font-bold text-secondary/80 uppercase tracking-widest w-28">Thời gian</th>
                 <th className="px-4 py-3 text-center text-[10px] font-display font-bold text-secondary/80 uppercase tracking-widest w-24">Xếp loại</th>
                 <th className="px-4 py-3 text-center text-[10px] font-display font-bold text-secondary/80 uppercase tracking-widest w-32">Ngày nộp</th>
+                <th className="px-4 py-3 text-center text-[10px] font-display font-bold text-secondary/80 uppercase tracking-widest w-20">Chi tiết</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-secondary/10">
@@ -410,6 +415,11 @@ export default async function ExamDetailPage({
                     </td>
                     <td className="px-4 py-3 text-center">
                       <span className="text-[10px] text-secondary/60">{submittedAt}</span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <Link href={`/teacher/exams/${id}/results/${r.id}`} className="inline-flex items-center justify-center p-1.5 text-blue-500 hover:bg-blue-50 rounded-md transition-colors" title="Xem chi tiết">
+                        <ExternalLink size={16} />
+                      </Link>
                     </td>
                   </tr>
                 )
