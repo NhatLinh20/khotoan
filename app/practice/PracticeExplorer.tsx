@@ -46,8 +46,10 @@ export default function PracticeExplorer({ exams }: { exams: Exam[] }) {
 
  <div className="max-w-6xl mx-auto px-4 md:px-6 py-6 md:py-8 space-y-5">
  {/* Filter Bar */}
- <div className="bg-surface rounded-lg border border-secondary/20 shadow-sm p-4 flex flex-row items-center gap-3 overflow-x-auto custom-scrollbar">
- <div className="relative shrink-0 w-52">
+ <div className="bg-surface rounded-lg border border-secondary/20 shadow-sm p-4 flex flex-col md:flex-row md:items-center gap-3">
+ {/* Row 1: Search + Loại đề thi (+ nút xóa lọc trên mobile) */}
+ <div className="flex items-center gap-2 w-full md:w-auto">
+ <div className="relative flex-1 md:flex-none md:w-52 shrink-0">
  <input
  placeholder="Tìm đề thi..."
  value={search}
@@ -56,27 +58,31 @@ export default function PracticeExplorer({ exams }: { exams: Exam[] }) {
  />
  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-secondary" size={16} />
  </div>
- <div className="w-px h-6 bg-secondary/20 shrink-0" />
  <select value={subject} onChange={e => setSubject(e.target.value)}
  className="px-3 py-2 bg-neutral border border-secondary/20 rounded-md text-sm font-bold text-primary outline-none cursor-pointer shrink-0">
  <option value="">Tất cả loại đề thi</option>
  {Object.entries(EXAM_TYPE_MAP).map(([v,l]) => <option key={v} value={v}>{l}</option>)}
  </select>
- <div className="w-px h-6 bg-secondary/20 shrink-0" />
- <div className="flex items-center gap-1.5 shrink-0">
+ </div>
+
+ {/* Divider (desktop only) */}
+ <div className="hidden md:block w-px h-6 bg-secondary/20 shrink-0" />
+
+ {/* Row 2 on mobile / inline on desktop: Nút lớp + Xóa lọc */}
+ <div className="flex items-center gap-1.5 flex-wrap">
  {GRADE_OPTS.map(g => (
  <button key={g} onClick={() => setGrade(grade === g ? null : g)}
  className={`px-2.5 py-1.5 rounded-sm font-display text-[0.78rem] tracking-[0.14em] uppercase font-bold transition-all whitespace-nowrap ${grade === g ? 'bg-primary text-surface' : 'bg-neutral text-secondary hover:bg-primary/10 hover:text-primary'}`}>
  Lớp {g}
  </button>
  ))}
- </div>
  {hasFilter && (
  <button onClick={() => { setGrade(null); setSubject(''); setSearch('') }}
- className="px-2.5 py-1.5 text-[0.78rem] font-display font-bold text-tertiary uppercase tracking-[0.14em] bg-tertiary/10 hover:bg-tertiary/20 rounded-sm transition-colors shrink-0 whitespace-nowrap">
+ className="px-2.5 py-1.5 text-[0.78rem] font-display font-bold text-tertiary uppercase tracking-[0.14em] bg-tertiary/10 hover:bg-tertiary/20 rounded-sm transition-colors whitespace-nowrap">
  Xóa lọc ×
  </button>
  )}
+ </div>
  </div>
 
  {/* Results count */}
