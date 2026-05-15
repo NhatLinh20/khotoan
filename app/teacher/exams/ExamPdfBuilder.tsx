@@ -100,12 +100,26 @@ export default function ExamPdfBuilder({ initialExamId, initialData }: PdfBuilde
  const [dragOver, setDragOver] = useState(false)
 
  // Step 3 — Question config & Answers
- const [qConfig, setQConfig] = useState<QConfigs>({
- mc: { count: 0, totalScore: 0 }, tf: { count: 0, totalScore: 0 },
- short: { count: 0, totalScore: 0 }, essay: { count: 0, totalScore: 0 },
- })
+ // Tính lại qConfig từ answers đã lưu (khi sửa đề)
+ const deriveConfig = (answers: AnswerRow[]): QConfigs => {
+  const cfg: QConfigs = {
+   mc: { count: 0, totalScore: 0 }, tf: { count: 0, totalScore: 0 },
+   short: { count: 0, totalScore: 0 }, essay: { count: 0, totalScore: 0 },
+  }
+  for (const r of answers) {
+   const t = r.type as keyof QConfigs
+   if (!cfg[t]) continue
+   cfg[t].count += 1
+   cfg[t].totalScore += parseFloat(r.max_score) || 0
+  }
+  return cfg
+ }
+ const [qConfig, setQConfig] = useState<QConfigs>(
+  initialData?.answers?.length ? deriveConfig(initialData.answers)
+  : { mc: { count: 0, totalScore: 0 }, tf: { count: 0, totalScore: 0 }, short: { count: 0, totalScore: 0 }, essay: { count: 0, totalScore: 0 } }
+ )
  const [rows, setRows] = useState<AnswerRow[]>(initialData?.answers ?? [])
- const [generated, setGenerated] = useState(false)
+ const [generated, setGenerated] = useState(!!(initialData?.answers?.length))
 
  const supabase = createClient()
 
