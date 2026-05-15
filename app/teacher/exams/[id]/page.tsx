@@ -3,7 +3,7 @@ import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import {
  ArrowLeft, FileText, Database, Globe, EyeOff,
- Clock, BookOpen, Pencil, Download
+ Clock, BookOpen, Pencil, Download, Users, Trophy, TrendingUp, Award
 } from 'lucide-react'
 import ExamPublishButton from './ExamPublishButton'
 
@@ -55,6 +55,24 @@ export default async function ExamDetailPage({
 
  const questions = examQs ?? []
  const totalScore = questions.reduce((s: number, q: any) => s + (q.max_score ?? 0), 0)
+
+ // Fetch student results
+ const { data: rawResults } = await supabase
+   .from('exam_results')
+   .select('id, user_id, score, total_questions, time_spent_seconds, created_at, profiles(full_name, grade, email)')
+   .eq('exam_id', id)
+   .order('score', { ascending: false })
+
+ const studentResults = (rawResults ?? []) as any[]
+ const resultCount = studentResults.length
+ const avgScore = resultCount > 0
+   ? studentResults.reduce((s: number, r: any) => s + (r.score ?? 0), 0) / resultCount
+   : 0
+ const maxScore = resultCount > 0 ? Math.max(...studentResults.map((r: any) => r.score ?? 0)) : 0
+ const passCount = studentResults.filter((r: any) => {
+   const pct = totalScore > 0 ? (r.score / totalScore) * 100 : 0
+   return pct >= 50
+ }).length
 
  // Stats for bank exams
  const typeCounts: Record<string, number> = {}
@@ -257,5 +275,131 @@ export default async function ExamDetailPage({
  )}
  </div>
  </div>
- )
+
+  {/* ── Student Results Section ── */}
+  <div className="space-y-4">
+    {/* Summary stats */}
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      {[
+        { icon: <Users size={16} />, label: 'Lượt làm bài', value: resultCount, color: 'text-blue-500' },
+        { icon: <TrendingUp size={16} />, label: 'Điểm trung bình', value: resultCount > 0 ? avgScore.toFixed(2) : '—', color: 'text-primary' },
+        { icon: <Trophy size={16} />, label: 'Điểm cao nhất', value: resultCount > 0 ? maxScore.toFixed(2) : '—', color: 'text-amber-500' },
+        { icon: <Award size={16} />, label: 'Tỉ lệ đạt (≥50%)', value: resultCount > 0 ? `${Math.round((passCount / resultCount) * 100)}%` : '—', color: 'text-emerald-500' },
+      ].map(item => (
+        <div key={item.label} className="bg-surface rounded-md border border-secondary/20 p-4 flex items-center gap-3">
+          <div className={`w-9 h-9 rounded-md bg-neutral flex items-center justify-center ${item.color}`}>
+            {item.icon}
+          </div>
+          <div>
+            <p className="text-[10px] font-display font-bold text-secondary/80 uppercase tracking-widest">{item.label}</p>
+            <p className="font-display font-bold text-primary text-sm">{item.value}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    {/* Student results table */}
+    <div className="bg-surface rounded-md border border-secondary/20 overflow-hidden">
+      <div className="px-5 py-4 border-b border-secondary/20 flex items-center justify-between">
+        <h2 className="font-display font-bold text-primary flex items-center gap-2">
+          <Users size={16} className="text-primary" />
+          Danh sách kết quả học sinh
+        </h2>
+        <span className="text-xs font-display font-bold text-secondary bg-neutral px-3 py-1 rounded-md border border-secondary/20">
+          {resultCount} lượt nộp
+        </span>
+      </div>
+
+      {resultCount === 0 ? (
+        <div className="py-16 text-center">
+          <Users className="mx-auto mb-3 text-secondary/30" size={40} />
+          <p className="text-sm font-display font-bold text-secondary">Chưa có học sinh nào nộp bài</p>
+          <p className="text-xs text-secondary/60 mt-1">Kết quả sẽ xuất hiện sau khi học sinh hoàn thành bài thi</p>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-neutral/50 border-b border-secondary/20">
+                <th className="px-4 py-3 text-left text-[10px] font-display font-bold text-secondary/80 uppercase tracking-widest w-12">#</th>
+                <th className="px-4 py-3 text-left text-[10px] font-display font-bold text-secondary/80 uppercase tracking-widest">Học sinh</th>
+                <th className="px-4 py-3 text-center text-[10px] font-display font-bold text-secondary/80 uppercase tracking-widest w-28">Điểm</th>
+                <th className="px-4 py-3 text-center text-[10px] font-display font-bold text-secondary/80 uppercase tracking-widest w-24">Tỉ lệ %</th>
+                <th className="px-4 py-3 text-center text-[10px] font-display font-bold text-secondary/80 uppercase tracking-widest w-28">Thời gian</th>
+                <th className="px-4 py-3 text-center text-[10px] font-display font-bold text-secondary/80 uppercase tracking-widest w-24">Xếp loại</th>
+                <th className="px-4 py-3 text-center text-[10px] font-display font-bold text-secondary/80 uppercase tracking-widest w-32">Ngày nộp</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-secondary/10">
+              {studentResults.map((r: any, i: number) => {
+                const profile = r.profiles as any
+                const pct = totalScore > 0 ? Math.round((r.score / totalScore) * 100) : 0
+                const grade = pct >= 90 ? { label: 'Xuất sắc', cls: 'bg-emerald-100 text-emerald-700' }
+                  : pct >= 70 ? { label: 'Khá', cls: 'bg-blue-100 text-blue-700' }
+                  : pct >= 50 ? { label: 'Trung bình', cls: 'bg-amber-100 text-amber-700' }
+                  : { label: 'Cần cố gắng', cls: 'bg-red-100 text-red-700' }
+                const mins = Math.floor((r.time_spent_seconds ?? 0) / 60)
+                const secs = (r.time_spent_seconds ?? 0) % 60
+                const submittedAt = r.created_at
+                  ? new Date(r.created_at).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                  : '—'
+                return (
+                  <tr key={r.id} className={`hover:bg-neutral/50 transition-colors ${i === 0 ? 'bg-amber-50/30' : ''}`}>
+                    <td className="px-4 py-3 text-center">
+                      {i === 0 ? (
+                        <span className="text-amber-500 font-display font-bold text-sm">🥇</span>
+                      ) : i === 1 ? (
+                        <span className="text-slate-400 font-display font-bold text-sm">🥈</span>
+                      ) : i === 2 ? (
+                        <span className="text-amber-700 font-display font-bold text-sm">🥉</span>
+                      ) : (
+                        <span className="text-xs font-display font-bold text-secondary/60">{i + 1}</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center text-primary text-xs font-display font-bold shrink-0">
+                          {(profile?.full_name || profile?.email || 'HS')[0].toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="font-display font-semibold text-primary text-sm">{profile?.full_name || '—'}</p>
+                          <p className="text-[10px] text-secondary/60">{profile?.email || ''}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span className="font-display font-bold text-primary">{(r.score ?? 0).toFixed(2)}</span>
+                      <span className="text-secondary text-xs">/{totalScore.toFixed(0)}</span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <div className="flex flex-col items-center gap-1">
+                        <span className="font-display font-bold text-primary text-sm">{pct}%</span>
+                        <div className="w-16 h-1.5 bg-neutral rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all ${pct >= 70 ? 'bg-emerald-500' : pct >= 50 ? 'bg-amber-400' : 'bg-red-400'}`}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span className="text-xs font-display font-bold text-secondary">{mins}p {secs}s</span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span className={`text-[10px] font-display font-bold px-2 py-1 rounded ${grade.cls}`}>{grade.label}</span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span className="text-[10px] text-secondary/60">{submittedAt}</span>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  </div>
+  </div>
+  )
 }
