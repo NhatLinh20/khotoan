@@ -40,8 +40,8 @@ export default function VideoPlayer({ url }: { url: string }) {
   }
 
   return (
-    <div ref={containerRef} className="relative w-full aspect-video rounded-lg overflow-hidden bg-slate-900 shadow-xl border border-secondary/20 flex flex-col">
-      {/* Nút Toàn màn hình hiển thị nổi ở góc phải trên */}
+    <div ref={containerRef} className="relative w-full aspect-video rounded-lg overflow-hidden bg-slate-900 shadow-xl border border-secondary/20">
+      {/* Nút Toàn màn hình luôn hiển thị */}
       <button
         onClick={toggleFullscreen}
         className="absolute top-2 right-2 z-10 flex items-center justify-center bg-black/70 hover:bg-black/90 text-white p-2.5 rounded-lg backdrop-blur-sm transition-all"
@@ -52,7 +52,7 @@ export default function VideoPlayer({ url }: { url: string }) {
 
       <iframe
         src={url}
-        className="w-full h-full border-0 flex-1"
+        className="absolute inset-0 w-full h-full border-0"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
         allowFullScreen
       />
