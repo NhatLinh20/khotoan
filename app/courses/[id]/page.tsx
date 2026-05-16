@@ -10,6 +10,7 @@ import { MOCK_COURSES, getMockLessons, type Course, type Lesson } from '@/lib/mo
 import { getChapters } from '@/lib/math-taxonomy'
 import EnrollButton from './EnrollButton'
 import CourseContentAccordion, { type LessonGroup } from './CourseContentAccordion'
+import VideoPlayer from '@/components/VideoPlayer'
 
 function formatPrice(price: number) {
  if (price === 0) return 'Miễn phí'
@@ -153,6 +154,11 @@ export default async function CourseDetailPage({
 
  return (
  <div className="min-h-screen bg-neutral">
+ {/* Chế độ rạp hát: Ẩn Navbar để tối ưu không gian xem video trên mobile */}
+ <style>{`
+    nav { display: none !important; }
+    main { padding-top: 0 !important; }
+  `}</style>
  {/* Breadcrumb */}
  <div className="bg-surface border-b border-secondary/20">
  <div className="max-w-7xl mx-auto px-6 py-4 flex items-center gap-2 text-sm text-secondary font-medium">
@@ -173,15 +179,11 @@ export default async function CourseDetailPage({
  </Link>
 
  {/* Main Display: Video Player OR Thumbnail */}
- <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-slate-900 shadow-xl border border-secondary/20">
+ <div className="w-full">
  {activeVideoUrl ? (
- <iframe
- src={activeVideoUrl}
- className="w-full h-full border-0"
- allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
- allowFullScreen
- />
+ <VideoPlayer url={activeVideoUrl} />
  ) : course.thumbnail_url ? (
+ <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-slate-900 shadow-xl border border-secondary/20">
  <Image
  src={course.thumbnail_url}
  alt={course.title}
@@ -189,8 +191,9 @@ export default async function CourseDetailPage({
  priority
  className="object-cover"
  />
+ </div>
  ) : (
- <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/20">
+ <div className="w-full aspect-video flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/20 rounded-lg">
  <BookOpen className="text-primary/30" size={96} />
  </div>
  )}
