@@ -4,6 +4,7 @@ import"./globals.css";
 import Navbar from"@/components/Navbar";
 import Footer from"@/components/Footer";
 import { createClient } from"@/lib/supabase/server";
+import SessionGuardian from "@/components/SessionGuardian";
 
 const oswald = Oswald({ 
  subsets: ["latin"],
@@ -27,22 +28,35 @@ export default async function RootLayout({
 }: Readonly<{
  children: React.ReactNode;
 }>) {
- const supabase = await createClient();
- const { data: { user } } = await supabase.auth.getUser();
+  const supabase = await createClient();
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user || null;
 
- let profile = null;
- if (user) {
- const { data } = await supabase
- .from('profiles')
- .select('*')
- .eq('id', user.id)
- .single();
- profile = data;
- }
+  let profile = null;
+  let currentSessionId = null;
+
+  if (user) {
+    if (session?.access_token) {
+      try {
+        const payload = JSON.parse(Buffer.from(session.access_token.split('.')[1], 'base64').toString());
+        currentSessionId = payload.session_id;
+      } catch(e) {}
+    }
+
+    const { data } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+    profile = data;
+  }
 
  return (
  <html lang="en" className={`${oswald.variable} ${inter.variable}`}>
  <body className="antialiased bg-neutral text-primary font-body">
+ {user && currentSessionId && (
+   <SessionGuardian userId={user.id} currentSessionId={currentSessionId} />
+ )}
  <Navbar user={user} profile={profile} />
  <main className="min-h-screen pt-20">
  {children}

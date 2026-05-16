@@ -286,7 +286,7 @@ export default function DashboardClient({
  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
  {enrollments.map((e) => {
  const course = e.courses
- const mockProgress = Math.floor(Math.random() * 60) + 20
+ const mockProgress = Math.floor(0.5 * 60) + 20
  return (
  <div key={e.id} className="group rounded-lg bg-surface border border-secondary/20 overflow-hidden hover:border-secondary/40 transition-all shadow-sm">
  <div className="h-28 bg-neutral relative overflow-hidden">
