@@ -13,8 +13,8 @@ export async function GET(request: Request) {
 		const { data: authData, error } = await supabase.auth.exchangeCodeForSession(code)
 
 		if (!error && authData.user) {
-			// Nếu là luồng reset password → về trang đặt mật khẩu mới
-			if (type === 'recovery') {
+			// Luồng reset password: type=recovery hoặc next=/reset-password
+			if (type === 'recovery' || next === '/reset-password') {
 				return NextResponse.redirect(`${origin}/reset-password`)
 			}
 
