@@ -110,10 +110,39 @@ export async function register(formData: FormData) {
 }
 
 export async function logout() {
- const supabase = await createClient()
- await supabase.auth.signOut()
- await revalidatePath('/', 'layout')
- redirect('/login')
+	const supabase = await createClient()
+	await supabase.auth.signOut()
+	await revalidatePath('/', 'layout')
+	redirect('/login')
+}
+
+export async function resetPassword(formData: FormData) {
+	const email = formData.get('email') as string
+	const supabase = await createClient()
+	const origin = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+
+	const { error } = await supabase.auth.resetPasswordForEmail(email, {
+		redirectTo: `${origin}/auth/reset-password`,
+	})
+
+	if (error) {
+		return { error: error.message }
+	}
+
+	return { success: true }
+}
+
+export async function updatePassword(formData: FormData) {
+	const password = formData.get('password') as string
+	const supabase = await createClient()
+
+	const { error } = await supabase.auth.updateUser({ password })
+
+	if (error) {
+		return { error: error.message }
+	}
+
+	redirect('/dashboard')
 }
 
 // ─── Teacher actions ───────────────────────────────────────────────────────────
