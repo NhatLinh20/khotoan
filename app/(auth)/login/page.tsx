@@ -23,11 +23,7 @@ export default function LoginPage() {
 
 	return (
 		<div className="animate-in fade-in slide-in-from-bottom-4 duration-700 font-body">
-			<div className="text-left mb-8">
-				<h2 className="text-4xl font-display font-bold text-primary mb-3">Chào mừng trở lại!</h2>
-				<p className="text-secondary text-[0.95rem]">Đăng nhập để tiếp tục lộ trình học của bạn</p>
-			</div>
-
+	
 			{/* Nút Google - ưu tiên hiển thị lên đầu */}
 			<div className="mb-6">
 				<button
