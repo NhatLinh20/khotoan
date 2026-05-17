@@ -253,10 +253,30 @@ export default function PracticeSession({
  }
  }, [currentIdx, exam.exam_type])
 
- // ── PDF Layout ──
- if (exam.exam_type === 'pdf') {
- return (
- <div className="fixed inset-0 top-16 md:top-20 z-40 flex flex-col md:flex-row overflow-hidden bg-surface font-body">
+ 	// ── PDF Layout ──
+	if (exam.exam_type === 'pdf') {
+		return (
+			<div className="fixed inset-0 top-16 md:top-20 z-40 flex flex-col md:flex-row overflow-hidden bg-surface font-body in-exam-layout-fixed">
+				<style dangerouslySetInnerHTML={{ __html: `
+					@media (max-height: 500px) and (orientation: landscape) {
+						nav { display: none !important; }
+						footer { display: none !important; }
+						main { padding-top: 0 !important; }
+						.in-exam-layout-fixed { top: 0 !important; }
+						.in-exam-layout-fixed > div:first-child { height: 38px !important; }
+						.in-exam-layout-fixed > div:first-child button { padding-top: 6px !important; padding-bottom: 6px !important; font-size: 0.8rem !important; }
+						.in-exam-layout-fixed .w-full.md\\:w-\\[400px\\] h1 { display: none !important; }
+						.in-exam-layout-fixed .w-full.md\\:w-\\[400px\\] .px-3.py-3.border-b { padding-top: 6px !important; padding-bottom: 6px !important; }
+						.in-exam-layout-fixed .w-full.md\\:w-\\[400px\\] .grid.grid-cols-11 { display: none !important; }
+						.in-exam-layout-fixed .w-full.md\\:w-\\[400px\\] .space-y-3 > div { padding: 8px 12px !important; }
+						.in-exam-layout-fixed .w-full.md\\:w-\\[400px\\] .w-9.h-8 { height: 28px !important; width: 32px !important; font-size: 11px !important; padding: 2px !important; }
+						.in-exam-layout-fixed .w-full.md\\:w-\\[400px\\] input[type="number"] { padding-top: 4px !important; padding-bottom: 4px !important; font-size: 13px !important; }
+						.in-exam-layout-fixed .w-full.md\\:w-\\[400px\\] .px-4.py-3.border-t { padding: 6px 12px !important; }
+						.in-exam-layout-fixed .w-full.md\\:w-\\[400px\\] .px-4.py-3.border-t button { padding-top: 6px !important; padding-bottom: 6px !important; font-size: 0.85rem !important; }
+						.in-exam-bank-header { top: 0 !important; }
+						.in-exam-bank-body { padding-top: 90px !important; }
+					}
+				` }} />
  {/* Mobile Tabs Header */}
  <div className="md:hidden flex items-center bg-surface border-b border-secondary/20 shrink-0">
  <button onClick={() => setMobileTab('pdf')} className={`flex-1 py-3 text-[0.95rem] font-bold border-b-2 transition-colors ${mobileTab === 'pdf' ? 'border-tertiary text-tertiary bg-tertiary/5' : 'border-transparent text-secondary'}`}>Đề thi</button>
@@ -390,11 +410,31 @@ export default function PracticeSession({
  )
  }
 
- // ── Bank Layout ──
- return (
- <div className="min-h-screen bg-neutral font-body">
+ 	// ── Bank Layout ──
+	return (
+		<div className="min-h-screen bg-neutral font-body">
+			<style dangerouslySetInnerHTML={{ __html: `
+				@media (max-height: 500px) and (orientation: landscape) {
+					nav { display: none !important; }
+					footer { display: none !important; }
+					main { padding-top: 0 !important; }
+					.in-exam-layout-fixed { top: 0 !important; }
+					.in-exam-layout-fixed > div:first-child { height: 38px !important; }
+					.in-exam-layout-fixed > div:first-child button { padding-top: 6px !important; padding-bottom: 6px !important; font-size: 0.8rem !important; }
+					.in-exam-layout-fixed .w-full.md\\:w-\\[400px\\] h1 { display: none !important; }
+					.in-exam-layout-fixed .w-full.md\\:w-\\[400px\\] .px-3.py-3.border-b { padding-top: 6px !important; padding-bottom: 6px !important; }
+					.in-exam-layout-fixed .w-full.md\\:w-\\[400px\\] .grid.grid-cols-11 { display: none !important; }
+					.in-exam-layout-fixed .w-full.md\\:w-\\[400px\\] .space-y-3 > div { padding: 8px 12px !important; }
+					.in-exam-layout-fixed .w-full.md\\:w-\\[400px\\] .w-9.h-8 { height: 28px !important; width: 32px !important; font-size: 11px !important; padding: 2px !important; }
+					.in-exam-layout-fixed .w-full.md\\:w-\\[400px\\] input[type="number"] { padding-top: 4px !important; padding-bottom: 4px !important; font-size: 13px !important; }
+					.in-exam-layout-fixed .w-full.md\\:w-\\[400px\\] .px-4.py-3.border-t { padding: 6px 12px !important; }
+					.in-exam-layout-fixed .w-full.md\\:w-\\[400px\\] .px-4.py-3.border-t button { padding-top: 6px !important; padding-bottom: 6px !important; font-size: 0.85rem !important; }
+					.in-exam-bank-header { top: 0 !important; }
+					.in-exam-bank-body { padding-top: 90px !important; }
+				}
+			` }} />
  {/* Fixed Header */}
- <div className="fixed top-20 left-0 right-0 z-40 bg-surface border-b border-secondary/20 shadow-sm">
+ <div className="fixed top-20 left-0 right-0 z-40 bg-surface border-b border-secondary/20 shadow-sm in-exam-bank-header">
  <div className="max-w-6xl mx-auto px-3 py-2 flex flex-col xl:flex-row xl:items-center gap-2 xl:gap-4">
  <div className="flex items-center justify-between xl:w-64 shrink-0 min-w-0">
  <div className="flex-1 min-w-0 pr-2">
@@ -455,7 +495,7 @@ export default function PracticeSession({
  </div>
 
  {/* Body */}
- <div className="max-w-4xl mx-auto px-4 pt-32 md:pt-28 pb-8 space-y-6">
+ <div className="max-w-4xl mx-auto px-4 pt-32 md:pt-28 pb-8 space-y-6 in-exam-bank-body">
 
  {/* Current Question */}
  {currentQ && (
